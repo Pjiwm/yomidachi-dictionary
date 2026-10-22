@@ -23,13 +23,13 @@ export function renderSearchBar(state: AppState, actions: Actions | null, size: 
 
 	const radicals = button(
 		{
-			class: `absolute inset-y-0 right-11 flex items-center justify-center min-w-11 text-muted hover:text-primary transition-colors ${state.radicalPicker ? "text-accent" : ""}`,
+			class: `absolute inset-y-0 right-11 flex items-center justify-center min-w-11 transition-colors ${state.radicalPicker ? "text-accent" : "text-muted hover:text-primary"}`,
 			"aria-label": "Find kanji by radical",
 			title: "Find kanji by radical",
 			"aria-expanded": String(Boolean(state.radicalPicker)),
 		},
 		[el("span", { class: `font-medium leading-none ${size === "large" ? "text-lg" : "text-base"}` }, ["部"])],
-		() => (state.radicalPicker ? actions?.closeRadicalPicker() : void actions?.openRadicalPicker(input.value)),
+		() => (state.radicalPicker ? actions?.closeRadicalPicker() : void actions?.openRadicalPicker()),
 	);
 	const clear = button(
 		{ class: "absolute inset-y-0 right-22 flex items-center justify-center min-w-10 text-muted hover:text-primary transition-colors", "aria-label": "Clear search" },

@@ -4,7 +4,6 @@ import { resolveFilter, type ResolvedFilter } from "../search/filters.ts";
 import type { Route } from "./router.ts";
 import { parseHash, routeQuery } from "./router.ts";
 import type { Store } from "./state.ts";
-import { openDraft } from "../ui/RadicalPicker.ts";
 import type { SearchResults } from "../types.ts";
 
 /* Each result row the list shows costs about one round trip, so start small. */
@@ -129,9 +128,8 @@ export class Actions {
 		}, SKELETON_DELAY_MS);
 	}
 
-	async openRadicalPicker(initialQuery: string): Promise<void> {
+	async openRadicalPicker(): Promise<void> {
 		if (this.store.current.radicalPicker) return;
-		openDraft(initialQuery);
 		const radicals = await this.repository.radicals().catch(() => []);
 		this.store.update({ radicalPicker: { radicals, selected: [], available: [], kanji: [], total: 0, justOpened: true, kanjiFocus: false } });
 	}
