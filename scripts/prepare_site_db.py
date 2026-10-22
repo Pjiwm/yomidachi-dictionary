@@ -18,7 +18,7 @@ CHUNK_PREFIX = "db.sqlite3."
 
 
 KATAKANA_OFFSET = 0x60
-SUMMARY_GLOSS_CHARS = 80
+SUMMARY_GLOSS_CHARS = 200
 UNRANKED = 1_000_000
 FILTERS_JSON = ROOT_DIR / "site" / "src" / "search" / "filters.json"
 COMBINING_SMALL_KANA = set("ゃゅょぁぃぅぇぉャュョァィゥェォ")
@@ -127,7 +127,10 @@ def build_search_tables(conn: sqlite3.Connection) -> None:
         );
         INSERT INTO word_summary
         SELECT w.sequence, p.term, p.reading,
-               substr(coalesce(p.translation, ''), 1, {SUMMARY_GLOSS_CHARS}),
+               coalesce((SELECT group_concat(gloss, ', ') FROM (
+                   SELECT gloss FROM glosses g
+                   WHERE g.sense_id = p.id AND g.gloss NOT LIKE 'see:%'
+                   ORDER BY g.position)), p.translation, ''),
                p.frequency > 0,
                CASE WHEN w.freq_rank IS NOT NULL THEN w.freq_rank
                     ELSE {UNRANKED} - min(coalesce(
@@ -183,6 +186,11 @@ def build_search_tables(conn: sqlite3.Connection) -> None:
         JOIN word_summary ws ON ws.sequence = s.sequence
         WHERE g.gloss NOT LIKE 'see:%';
         """
+    )
+    # The results list truncates with CSS; this cap only bounds row size.
+    conn.execute(
+        f"""UPDATE word_summary SET gloss = substr(gloss, 1, {SUMMARY_GLOSS_CHARS}) || '…'
+            WHERE length(gloss) > {SUMMARY_GLOSS_CHARS}"""
     )
     forms = conn.execute(
         """SELECT DISTINCT s.sequence, s.term, s.reading, ws.rank, ws.gloss, ws.common
