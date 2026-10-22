@@ -88,7 +88,7 @@ def word_tags(conn: sqlite3.Connection) -> list:
             add(sequence, f"strokes:{strokes}")
 
     ranks = dict(conn.execute("SELECT sequence, rank FROM word_summary"))
-    return [(tag, ranks[seq], seq) for seq, seq_tags in tags.items() for tag in seq_tags]
+    return [(tag, ranks[seq], seq) for seq, seq_tags in tags.items() if seq in ranks for tag in seq_tags]
 
 
 def kanji_readings(conn: sqlite3.Connection) -> list:

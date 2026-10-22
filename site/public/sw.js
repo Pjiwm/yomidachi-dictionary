@@ -34,18 +34,25 @@ self.addEventListener("fetch", (event) => {
 		return;
 	}
 
-	// Hashed build assets and icons never change under the same URL.
+	// Hashed build assets never change under the same URL, so the cache wins.
+	// Icons, the manifest and the worker files are not hashed: serve the cached
+	// copy for speed but refresh it, so a new icon set reaches installed apps.
+	const immutable = url.pathname.startsWith(`${BASE}assets/`);
 	event.respondWith(
-		caches.match(event.request).then(
-			(cached) =>
-				cached ??
-				fetch(event.request).then((response) => {
-					if (response.ok) {
-						const copy = response.clone();
-						caches.open(CACHE).then((cache) => cache.put(event.request, copy));
-					}
-					return response;
-				}),
-		),
+		caches.match(event.request).then((cached) => {
+			const network = fetch(event.request).then((response) => {
+				if (response.ok) {
+					const copy = response.clone();
+					caches.open(CACHE).then((cache) => cache.put(event.request, copy));
+				}
+				return response;
+			});
+			if (cached && immutable) return cached;
+			if (cached) {
+				network.catch(() => {});
+				return cached;
+			}
+			return network;
+		}),
 	);
 });

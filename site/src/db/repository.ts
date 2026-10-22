@@ -161,10 +161,12 @@ export class DictRepository {
 	private async searchJapanese(text: string, limit: number): Promise<WordSummary[]> {
 		const hira = toHiragana(text);
 		const kata = toKatakana(text);
+		// Kanji-only input has one script form; a second identical range would just double the read.
+		const secondRange = hira === kata ? "" : "UNION ALL SELECT * FROM jp_index WHERE key >= ?3 AND key < ?4";
 		const rows = await this.query<SummaryRow>(
 			`WITH hits AS MATERIALIZED (
 			   SELECT * FROM jp_index WHERE key >= ?1 AND key < ?2
-			   UNION ALL SELECT * FROM jp_index WHERE key >= ?3 AND key < ?4
+			   ${secondRange}
 			 )
 			 SELECT sequence, term, reading, gloss, common,
 			        min(key <> ?1 AND key <> ?3) AS inexact, min(rank) AS rank
@@ -442,9 +444,12 @@ export class DictRepository {
 
 	/* Kanji containing every selected radical, and the radicals that can still narrow them. */
 	async kanjiByRadicals(selected: string[]): Promise<RadicalSearchResult> {
-		this.kanjiRadicals ??= this.query<KanjiRadicalsRow>("SELECT character, stroke_count, radicals FROM kanji_radicals").then((rows) =>
-			rows.map((r) => ({ character: r.character, strokes: r.stroke_count, radicals: new Set(r.radicals.split(" ")) })),
-		);
+		this.kanjiRadicals ??= this.query<KanjiRadicalsRow>("SELECT character, stroke_count, radicals FROM kanji_radicals")
+			.then((rows) => rows.map((r) => ({ character: r.character, strokes: r.stroke_count, radicals: new Set(r.radicals.split(" ")) })))
+			.catch((err: unknown) => {
+				this.kanjiRadicals = null;
+				throw err;
+			});
 		const all = await this.kanjiRadicals;
 		if (selected.length === 0) return { kanji: [], total: 0, available: [] };
 

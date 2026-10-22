@@ -16,7 +16,7 @@ export function renderSearchBar(state: AppState, actions: Actions | null, size: 
 		"aria-label": "Search the dictionary",
 		class: size === "large" ? "search-input text-lg pl-12 pr-24 py-3" : "search-input text-base pl-10 pr-20 py-2",
 	});
-	if (size === "large") input.autofocus = true;
+	if (size === "large" && matchMedia("(hover: hover)").matches) input.autofocus = true;
 
 	const radicals = button(
 		{

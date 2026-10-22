@@ -7,6 +7,15 @@ export type Route =
 	| { kind: "kanji"; character: string; query: string };
 
 export function parseHash(hash: string): Route {
+	try {
+		return parseHashStrict(hash);
+	} catch {
+		// A hand-edited hash with a bad percent escape lands on the home page.
+		return { kind: "home" };
+	}
+}
+
+function parseHashStrict(hash: string): Route {
 	const [path, search = ""] = hash.replace(/^#/, "").split("?");
 	const query = new URLSearchParams(search).get("q") ?? "";
 	const parts = path.split("/").filter(Boolean);
