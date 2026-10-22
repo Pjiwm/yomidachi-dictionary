@@ -6,3 +6,6 @@ downloads/
 download.log
 db_files/*
 __pycache__/
+site/public/db/
+site/node_modules/
+site/dist/

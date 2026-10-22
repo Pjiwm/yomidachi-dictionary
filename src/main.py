@@ -1,3 +1,4 @@
+import argparse
 import os
 import sys
 import json
@@ -190,7 +191,28 @@ def build_examples():
     print(f"=== {cfg['name']} complete ===\n")
 
 
-def main():
+def dictionary_key(dictionary):
+    """The --build key for a dictionary: its db file name without the extension."""
+    return Path(dictionary["dbFileName"]).stem
+
+
+def build_headless(key):
+    """Build one target by key and return whether its db file exists afterwards."""
+    if key == "examples":
+        build_examples()
+        return (DB_DIR / data["tatoeba"]["dbFileName"]).exists()
+    dictionary = next(
+        (d for d in data["dictionaries"] if dictionary_key(d) == key), None
+    )
+    if dictionary is None:
+        keys = [dictionary_key(d) for d in data["dictionaries"]] + ["examples"]
+        print(f"Unknown build target '{key}'. Choose one of: {', '.join(keys)}")
+        return False
+    build_dictionary(dictionary)
+    return (DB_DIR / dictionary["dbFileName"]).exists()
+
+
+def main_interactive():
     while True:
         os.system("cls" if os.name == "nt" else "clear")
 
@@ -222,6 +244,20 @@ def main():
                 build_dictionary(dictionary)
 
         inquirer.select("Press enter to continue", choices=["Continue"]).execute()
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Build Japanese dictionary databases.")
+    parser.add_argument(
+        "--build",
+        metavar="TARGET",
+        help="build one target without the menu, e.g. Japanese_English or examples",
+    )
+    args = parser.parse_args()
+    if args.build is None:
+        main_interactive()
+        return
+    sys.exit(0 if build_headless(args.build) else 1)
 
 
 if __name__ == "__main__":

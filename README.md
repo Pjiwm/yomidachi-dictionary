@@ -21,6 +21,20 @@ python src/main.py
 
 Select a dictionary to build or "Build All". Output goes to `db_files/`.
 
+## Website
+
+`site/` is the Yomidachi Dictionary web app, served from GitHub Pages. The
+browser queries the SQLite file directly, so there is no server.
+
+```bash
+python src/main.py --build Japanese_English   # if db_files/ is empty
+python scripts/prepare_site_db.py             # search tables + chunks into site/public/db/
+cd site && npm install && npm run dev
+```
+
+`npm run build` writes `site/dist/`. Deploys are manual: Actions → "Build and
+deploy the dictionary site" → Run workflow.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
@@ -47,3 +61,7 @@ See [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md) for full details.
 
 Source code is licensed under the [MIT License](LICENSE).
 Dictionary data has its own licensing - see above.
+
+The Yomidachi name, wordmark and icons are not covered by the MIT License.
+They identify this project and the Yomidachi app; forks and derived work may
+not use them to present themselves as Yomidachi.
