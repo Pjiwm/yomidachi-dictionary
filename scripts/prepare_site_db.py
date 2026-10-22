@@ -281,6 +281,8 @@ def write_chunks(prepared: Path, out_dir: Path, chunk_size: int) -> dict:
     for stale in out_dir.iterdir():
         if stale.is_dir() and stale != version_dir:
             shutil.rmtree(stale)
+        elif stale.name.startswith(CHUNK_PREFIX):
+            stale.unlink()
     version_dir.mkdir(exist_ok=True)
     with prepared.open("rb") as src:
         index = 0
