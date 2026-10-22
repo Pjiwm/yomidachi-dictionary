@@ -1,5 +1,6 @@
 import argparse
 import os
+import shutil
 import sys
 import json
 import logging
@@ -15,8 +16,12 @@ from database_installers.dictionaryinstaller import DictionaryInstaller
 from database_installers import jmdict, kanjidic, jlpt, frequency, pitch_accent, radkfile, examples
 
 DOWNLOADS_DIR = ROOT_DIR / "downloads"
+# Small, rarely changing sources live in git so a build never waits on a slow mirror.
+BUNDLED_DIR = ROOT_DIR / "data"
 DB_DIR = ROOT_DIR / "db_files"
 EXTRACT_DIR = ROOT_DIR / "extracted_files"
+DOWNLOAD_TIMEOUT = (10, 60)
+DOWNLOAD_ATTEMPTS = 3
 
 logging.basicConfig(
     filename=str(ROOT_DIR / "download.log"),
@@ -31,26 +36,33 @@ DOWNLOADS_DIR.mkdir(exist_ok=True)
 
 
 def download_file(name, url, filename):
-    try:
-        logging.info(f"Starting download for: {name}")
-        response = requests.get(url, stream=True)
-        response.raise_for_status()
-        file_size = int(response.headers.get("content-length", 0))
-        dest_file = DOWNLOADS_DIR / filename
-
-        with open(dest_file, "wb") as f, tqdm(
-            desc=name, total=file_size, unit="B", unit_scale=True, unit_divisor=1024
-        ) as bar:
-            for chunk in response.iter_content(1024):
-                f.write(chunk)
-                bar.update(len(chunk))
-
-        logging.info(f"Successfully downloaded: {name}")
+    dest_file = DOWNLOADS_DIR / filename
+    bundled = BUNDLED_DIR / filename
+    if bundled.exists():
+        shutil.copyfile(bundled, dest_file)
+        print(f"{name}: using bundled {bundled.name}")
         return dest_file
-    except requests.exceptions.RequestException as e:
-        logging.error(f"Failed to download {name}: {e}")
-        print(f"Error downloading {name}: {e}")
-        return None
+
+    for attempt in range(1, DOWNLOAD_ATTEMPTS + 1):
+        try:
+            logging.info(f"Starting download for: {name} (attempt {attempt})")
+            response = requests.get(url, stream=True, timeout=DOWNLOAD_TIMEOUT)
+            response.raise_for_status()
+            file_size = int(response.headers.get("content-length", 0))
+
+            with open(dest_file, "wb") as f, tqdm(
+                desc=name, total=file_size, unit="B", unit_scale=True, unit_divisor=1024
+            ) as bar:
+                for chunk in response.iter_content(1024):
+                    f.write(chunk)
+                    bar.update(len(chunk))
+
+            logging.info(f"Successfully downloaded: {name}")
+            return dest_file
+        except requests.exceptions.RequestException as e:
+            logging.error(f"Failed to download {name}: {e}")
+            print(f"Error downloading {name} (attempt {attempt} of {DOWNLOAD_ATTEMPTS}): {e}")
+    return None
 
 
 def build_dictionary(dictionary):
