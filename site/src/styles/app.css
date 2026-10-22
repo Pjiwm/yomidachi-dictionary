@@ -18,8 +18,11 @@
 }
 
 @layer base {
-	html {
-		color-scheme: light dark;
+	:root {
+		color-scheme: light;
+	}
+	:root[data-theme="dark"] {
+		color-scheme: dark;
 	}
 	body {
 		font-family: var(--font-sans);
@@ -27,6 +30,9 @@
 		color: var(--text-primary);
 		-webkit-font-smoothing: antialiased;
 		font-feature-settings: "palt" 1;
+	}
+	button {
+		cursor: pointer;
 	}
 }
 
@@ -36,4 +42,43 @@
 
 @utility chip {
 	@apply inline-block border border-border-default text-secondary text-xs px-3 py-0.5 rounded;
+}
+
+@utility chip-filled {
+	@apply inline-block bg-primary text-surface text-xs px-3 py-0.5 rounded;
+}
+
+@utility icon-button {
+	@apply inline-flex items-center justify-center min-w-11 min-h-11 text-muted hover:text-accent transition-colors;
+}
+
+@utility search-input {
+	@apply w-full bg-surface-elevated text-primary border border-border-default rounded-lg outline-none placeholder:text-muted focus:border-accent transition-colors;
+}
+
+/* Pitch diagram: a line above a high mora, below a low one, and a step at each change. */
+@layer components {
+	.pitch-mora {
+		display: inline-flex;
+		align-items: center;
+		line-height: 1;
+		padding: 4px 1px;
+		color: var(--text-muted);
+		border-top: 2px solid transparent;
+		border-bottom: 2px solid transparent;
+	}
+	.pitch-high {
+		border-top-color: var(--accent);
+	}
+	.pitch-low {
+		border-bottom-color: var(--accent);
+	}
+	.pitch-step {
+		border-left: 2px solid var(--accent);
+	}
+	.pitch-tail {
+		display: inline-block;
+		width: 0;
+		border-left: 2px solid var(--accent);
+	}
 }

@@ -5,6 +5,7 @@ import { resolveFilter, type ResolvedFilter } from "../search/filters.ts";
 import type { Route } from "./router.ts";
 import { parseHash, routeQuery } from "./router.ts";
 import type { Store } from "./state.ts";
+import type { SearchResults } from "../types.ts";
 
 const RESULT_LIMIT = 50;
 const KANJI_LIMIT = 60;
@@ -57,17 +58,23 @@ export class Actions {
 		}
 	}
 
-	private async runSearch(query: string) {
+	private async runSearch(query: string): Promise<SearchResults> {
 		const { text, chips } = parseQuery(query);
-		const filters = chips.map(resolveFilter).filter((f): f is ResolvedFilter => f !== null);
+		const resolved = chips.map(resolveFilter).filter((f): f is ResolvedFilter => f !== null);
+		const kanjiOnly = resolved.some((f) => f.kind === "kanjiOnly");
+		const filters = resolved.filter((f) => f.kind !== "kanjiOnly");
+
+		let results: SearchResults;
 		if (filters.length > 0 || hasWildcard(text)) {
-			return this.repository.advancedSearch(text, filters, RESULT_LIMIT);
+			results = await this.repository.advancedSearch(text, filters, RESULT_LIMIT);
+		} else {
+			const [words, kanji] = await Promise.all([
+				kanjiOnly ? Promise.resolve([]) : this.repository.search(text, RESULT_LIMIT),
+				this.kanjiFor(text),
+			]);
+			results = { words, kanji };
 		}
-		const [words, kanji] = await Promise.all([
-			this.repository.search(text, RESULT_LIMIT),
-			this.kanjiFor(text),
-		]);
-		return { words, kanji };
+		return kanjiOnly ? { words: [], kanji: results.kanji } : results;
 	}
 
 	private kanjiFor(text: string) {

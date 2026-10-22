@@ -6,10 +6,10 @@ export interface FilterOption {
 	codes: string[];
 }
 
-/* How the repository applies a filter: pos codes against senses.pos,
-   frequency against the common flag, pitch against the computed pitch
-   type, jlpt against words.jlpt_level, kanji against the kanji table. */
-export type FilterKind = "pos" | "frequency" | "pitch" | "jlpt" | "kanji";
+/* How a filter is applied: pos codes against senses.pos, frequency against
+   the common flag, pitch against the computed pitch type, jlpt against
+   words.jlpt_level, kanji against the kanji table, kanjiOnly hides words. */
+export type FilterKind = "pos" | "frequency" | "pitch" | "jlpt" | "kanji" | "kanjiOnly";
 
 export interface ResolvedFilter {
 	prefix: string;
@@ -59,6 +59,7 @@ export const POS_FILTERS: FilterOption[] = [
 
 export const IS_FILTERS: FilterOption[] = [
 	{ key: "common", label: "common", codes: [] },
+	{ key: "kanji", label: "kanji only", codes: [] },
 	{ key: "kana", label: "usually kana", codes: ["uk"] },
 	{ key: "archaic", label: "archaic", codes: ["arch", "dated", "obs"] },
 	{ key: "slang", label: "slang", codes: ["sl", "col"] },
@@ -176,5 +177,6 @@ export function resolveFilter(chip: FilterChip): ResolvedFilter | null {
 	if (!preset) return null;
 	if (chip.prefix === "pitch") return { ...base, codes: preset.codes, kind: "pitch" };
 	if (chip.prefix === "is" && chip.value === "common") return { ...base, codes: [], kind: "frequency" };
+	if (chip.prefix === "is" && chip.value === "kanji") return { ...base, codes: [], kind: "kanjiOnly" };
 	return { ...base, codes: preset.codes, kind: "pos" };
 }

@@ -5,6 +5,7 @@ import json
 import shutil
 import sqlite3
 import sys
+from datetime import date
 from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -100,12 +101,26 @@ def build_search_tables(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
-def prepare_database(source: Path, work_copy: Path) -> None:
+def collect_meta(conn: sqlite3.Connection) -> dict:
+    """Counts the landing page shows; computed here because counting over HTTP is a full scan."""
+    count = lambda sql: conn.execute(sql).fetchone()[0]
+    return {
+        "words": count("SELECT count(*) FROM words"),
+        "kanji": count("SELECT count(*) FROM kanji"),
+        "pitchWords": count("SELECT count(DISTINCT sequence) FROM senses WHERE pitch_accent IS NOT NULL"),
+        "jlptWords": count("SELECT count(*) FROM words WHERE jlpt_level IS NOT NULL"),
+        "rankedWords": count("SELECT count(*) FROM words WHERE freq_rank IS NOT NULL"),
+        "builtAt": date.today().isoformat(),
+    }
+
+
+def prepare_database(source: Path, work_copy: Path) -> dict:
     """Copy the database, add the search tables, rewrite at PAGE_SIZE with fresh statistics."""
     shutil.copyfile(source, work_copy)
     conn = sqlite3.connect(work_copy)
     try:
         build_search_tables(conn)
+        meta = collect_meta(conn)
         # A new page size only applies on VACUUM, and never in WAL mode.
         conn.execute("PRAGMA journal_mode = DELETE")
         conn.execute(f"PRAGMA page_size = {PAGE_SIZE}")
@@ -117,6 +132,7 @@ def prepare_database(source: Path, work_copy: Path) -> None:
         conn.close()
     if actual != PAGE_SIZE:
         raise RuntimeError(f"page size is {actual}, expected {PAGE_SIZE}")
+    return meta
 
 
 def write_chunks(prepared: Path, out_dir: Path, chunk_size: int) -> dict:
@@ -171,9 +187,10 @@ def main() -> int:
 
     args.out.mkdir(parents=True, exist_ok=True)
     work_copy = args.out / "prepared.db"
-    prepare_database(args.source, work_copy)
+    meta = prepare_database(args.source, work_copy)
     config = write_chunks(work_copy, args.out, args.chunk_size)
     (args.out / "config.json").write_text(json.dumps(config, indent=2) + "\n")
+    (args.out / "meta.json").write_text(json.dumps(meta, indent=2) + "\n")
     work_copy.unlink()
 
     chunk_count = len(list(args.out.glob(CHUNK_PREFIX + "*")))

@@ -21,8 +21,19 @@ export interface RadicalPicker {
 	kanji: KanjiEntry[];
 }
 
+/* Written by scripts/prepare_site_db.py next to the database chunks. */
+export interface DictionaryMeta {
+	words: number;
+	kanji: number;
+	pitchWords: number;
+	jlptWords: number;
+	rankedWords: number;
+	builtAt: string;
+}
+
 export interface AppState {
 	route: Route;
+	meta: DictionaryMeta | null;
 	query: string;
 	results: SearchResults | null;
 	searching: boolean;
@@ -35,6 +46,7 @@ export interface AppState {
 
 export const initialState: AppState = {
 	route: { kind: "home" },
+	meta: null,
 	query: "",
 	results: null,
 	searching: false,

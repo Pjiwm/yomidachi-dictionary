@@ -21,6 +21,9 @@ describe("resolveFilter", () => {
 			kind: "pos",
 		});
 	});
+	it("marks kanji-only as a result scope, not a code match", () => {
+		expect(resolveFilter({ prefix: "is", value: "kanji", negated: false })?.kind).toBe("kanjiOnly");
+	});
 	it("marks common as a frequency filter", () => {
 		expect(resolveFilter({ prefix: "is", value: "common", negated: true })?.kind).toBe("frequency");
 	});
