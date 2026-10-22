@@ -1,0 +1,39 @@
+@import "tailwindcss";
+@import "./tokens.css";
+
+@theme {
+	--color-surface: var(--bg-surface);
+	--color-surface-elevated: var(--bg-surface-elevated);
+	--color-surface-sunken: var(--bg-surface-sunken);
+	--color-primary: var(--text-primary);
+	--color-secondary: var(--text-secondary);
+	--color-muted: var(--text-muted);
+	--color-border-default: var(--border-default);
+	--color-border-subtle: var(--border-subtle);
+	--color-border-strong: var(--border-strong);
+	--color-accent: var(--accent);
+	--color-accent-bg: var(--accent-bg);
+	--color-common: var(--common);
+	--font-sans: "Noto Sans JP", system-ui, sans-serif;
+}
+
+@layer base {
+	html {
+		color-scheme: light dark;
+	}
+	body {
+		font-family: var(--font-sans);
+		background-color: var(--bg-surface);
+		color: var(--text-primary);
+		-webkit-font-smoothing: antialiased;
+		font-feature-settings: "palt" 1;
+	}
+}
+
+@utility section-label {
+	@apply text-muted text-xs uppercase tracking-widest;
+}
+
+@utility chip {
+	@apply inline-block border border-border-default text-secondary text-xs px-3 py-0.5 rounded;
+}
