@@ -21,10 +21,6 @@ if (import.meta.env.PROD && "serviceWorker" in navigator) {
 	});
 }
 
-fetch(`${import.meta.env.BASE_URL}db/meta.json`)
-	.then((res) => (res.ok ? res.json() : null))
-	.then((meta) => store.update({ meta }))
-	.catch(() => {});
 
 openDatabase()
 	.then((db) => {

@@ -46,7 +46,7 @@ export interface AppState {
 
 export const initialState: AppState = {
 	route: { kind: "home" },
-	meta: null,
+	meta: __DICTIONARY_META__,
 	query: "",
 	results: null,
 	searching: false,

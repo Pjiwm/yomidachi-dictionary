@@ -65,7 +65,7 @@ export function renderLayout(state: AppState, actions: Actions | null): HTMLElem
 	return el("div", { class: "h-dvh flex flex-col" }, [
 		el("header", { class: "border-b border-border-subtle px-4 py-2 flex items-center gap-4" }, [
 			wordmark("small"),
-			el("div", { class: "flex-1 max-w-xl" }, [renderSearchBar(state, actions, "compact")]),
+			el("div", { class: "flex-1 max-w-3xl" }, [renderSearchBar(state, actions, "compact")]),
 			el("div", { class: "ml-auto" }, [themeButton()]),
 		]),
 		state.error ? errorBanner(state.error) : null,
