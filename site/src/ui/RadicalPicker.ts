@@ -1,15 +1,13 @@
 import type { Actions } from "../state/actions.ts";
-import { navigate } from "../state/router.ts";
 import type { AppState, RadicalPicker } from "../state/state.ts";
 import type { Radical } from "../types.ts";
-import { button, el } from "./dom.ts";
+import { button, el, insertIntoSearch } from "./dom.ts";
 import { icon } from "./icons.ts";
 
-/* The query being composed in the picker. It starts from whatever the search
-   field holds when the picker opens, grows as kanji are tapped, and is handed
-   back to the search field on close. Module state, not store state, because a
-   keystroke should not re-render the whole app. */
-let draft = "";
+/* The panel DOM is reused across renders: rebuilding it on every tap is what
+   made the sheet flash and jump on phones. Only the two panels are redrawn. */
+let panel: HTMLElement | null = null;
+let panelsHost: HTMLElement | null = null;
 
 function groupByStrokes(radicals: Radical[]): [number, Radical[]][] {
 	const groups = new Map<number, Radical[]>();
@@ -19,7 +17,7 @@ function groupByStrokes(radicals: Radical[]): [number, Radical[]][] {
 
 const TILE = "w-10 h-10 md:w-9 md:h-9 rounded-md text-lg flex items-center justify-center transition-colors";
 
-function radicalGrid(picker: RadicalPicker, actions: Actions, isTouch: boolean): HTMLElement {
+function radicalGrid(picker: RadicalPicker, actions: Actions): HTMLElement {
 	const available = new Set(picker.available);
 	const tiles = groupByStrokes(picker.radicals).flatMap(([strokes, radicals]) => [
 		el("div", { class: `${TILE} bg-surface-sunken text-muted text-xs font-semibold tabular-nums`, "aria-label": `${strokes} strokes` }, [String(strokes)]),
@@ -40,24 +38,24 @@ function radicalGrid(picker: RadicalPicker, actions: Actions, isTouch: boolean):
 			return tile;
 		}),
 	]);
-	// Phones: the grid shrinks to a strip while the kanji panel has focus.
-	const height = isTouch ? (picker.kanjiFocus ? "max-h-[16dvh]" : "max-h-[42dvh]") : "md:max-h-[60vh]";
+	// Phones: the grid gives up most of the sheet while the kanji panel has focus.
+	const share = picker.kanjiFocus ? "basis-1/4" : "basis-2/3";
 	return el(
 		"div",
-		{ class: `overflow-y-auto overscroll-contain min-h-0 md:w-1/2 md:border-r md:border-border-subtle md:pr-3 ${height}`, role: "group", "aria-label": "Radicals", "data-scroll": "radicals" },
+		{ class: `overflow-y-auto overscroll-contain min-h-0 ${share} md:basis-auto md:w-1/2 md:max-h-[55vh] md:border-r md:border-border-subtle md:pr-3`, role: "group", "aria-label": "Radicals", "data-scroll": "radicals" },
 		[el("div", { class: "flex flex-wrap gap-1.5 content-start" }, tiles)],
 	);
 }
 
-function kanjiPanel(picker: RadicalPicker, actions: Actions, isTouch: boolean, insert: (kanji: string) => void): HTMLElement {
+function kanjiPanel(picker: RadicalPicker, actions: Actions, isTouch: boolean): HTMLElement {
 	const summary =
 		picker.selected.length === 0
-			? "Pick one or more radicals to find a kanji."
+			? "Pick radicals; tap a kanji to add it to your search."
 			: picker.total > picker.kanji.length
 				? `${picker.total} kanji, showing the first ${picker.kanji.length}.`
 				: `${picker.total} kanji.`;
-	const height = isTouch ? (picker.kanjiFocus ? "max-h-[56dvh]" : "max-h-[30dvh]") : "md:max-h-[60vh]";
-	return el("div", { class: `overflow-y-auto overscroll-contain min-h-0 md:w-1/2 ${height}`, "data-scroll": "radical-matches" }, [
+	const share = picker.kanjiFocus ? "basis-3/4" : "basis-1/3";
+	return el("div", { class: `overflow-y-auto overscroll-contain min-h-0 ${share} md:basis-auto md:w-1/2 md:max-h-[55vh]`, "data-scroll": "radical-matches" }, [
 		el("div", { class: "flex items-center justify-between gap-2 mb-2 py-1.5 sticky top-0 bg-surface-elevated" }, [
 			el("span", { class: "text-muted text-[11px]", role: "status", "aria-live": "polite" }, [summary]),
 			picker.selected.length
@@ -68,7 +66,8 @@ function kanjiPanel(picker: RadicalPicker, actions: Actions, isTouch: boolean, i
 			const tile = button(
 				{ class: `${TILE} text-primary hover:bg-accent hover:text-white`, title: k.meanings, "aria-label": `Add ${k.character}, ${k.meanings}` },
 				[k.character],
-				() => insert(k.character),
+				// Straight into the search field; on a phone without focusing it, so the keyboard stays down.
+				() => insertIntoSearch(k.character, false, !isTouch),
 			);
 			tile.lang = "ja";
 			return tile;
@@ -89,93 +88,52 @@ function arrowNavigation(container: HTMLElement): void {
 	});
 }
 
-export function openDraft(initial: string): void {
-	draft = initial;
-}
-
+/* A popover under the search field on wide screens, a bottom sheet on phones.
+   Neither dims the page: the search field stays visible and editable, because
+   that is where tapped kanji go. */
 export function renderRadicalPicker(state: AppState, actions: Actions | null): HTMLElement | null {
 	const picker = state.radicalPicker;
-	if (!picker || !actions) return null;
+	if (!picker || !actions) {
+		panel = null;
+		panelsHost = null;
+		return null;
+	}
 	const isTouch = !matchMedia("(min-width: 768px)").matches;
 
-	const submit = () => {
-		const query = draft.trim();
-		actions.closeRadicalPicker();
-		navigate(query ? { kind: "search", query } : { kind: "home" });
-	};
-	const close = () => {
-		// The composed query goes back to the search field so nothing picked is lost.
-		const field = document.querySelector<HTMLInputElement>('input[data-draft="q"]');
-		if (field) field.value = draft;
-		actions.closeRadicalPicker();
-	};
-
-	const queryInput = el("input", {
-		type: "text",
-		value: draft,
-		"data-draft": "radical",
-		placeholder: "Type here or tap kanji below",
-		autocomplete: "off",
-		enterkeyhint: "search",
-		"aria-label": "Search query",
-		class: "flex-1 min-w-0 bg-transparent outline-none text-primary text-sm",
-	});
-	queryInput.addEventListener("input", () => {
-		draft = queryInput.value;
-	});
-	queryInput.addEventListener("keydown", (e) => {
-		if (e.key === "Enter") {
-			e.preventDefault();
-			submit();
-		}
-	});
-	const insert = (kanji: string) => {
-		draft += kanji;
-		queryInput.value = draft;
-		// Keep typing and picking together on desktop; on a phone focusing would raise the keyboard over the sheet.
-		if (!isTouch) queryInput.focus();
-	};
-	const queryField = el("div", { class: "flex items-center gap-2 mb-3 px-3 h-10 rounded-lg bg-surface border border-border-default focus-within:border-accent" }, [
-		el("span", { class: "text-muted shrink-0" }, [icon("search", 14)]),
-		queryInput,
-		button({ class: "text-xs text-muted hover:text-accent shrink-0" }, ["Search"], submit),
-	]);
-
-	const flip = isTouch
-		? button(
-				{ class: "md:hidden shrink-0 w-full flex items-center justify-center gap-2 h-11 rounded-lg border border-border-default text-secondary text-sm", "aria-pressed": String(picker.kanjiFocus) },
-				[icon("flip", 16), picker.kanjiFocus ? "Show more radicals" : "Show more kanji"],
-				() => actions.toggleKanjiFocus(),
-			)
-		: null;
-
-	const panels = el("div", { class: "flex flex-col md:flex-row gap-2 md:gap-3 min-h-0" }, [
-		radicalGrid(picker, actions, isTouch),
+	const flip = button(
+		{ class: "md:hidden shrink-0 w-full flex items-center justify-center gap-2 h-10 rounded-lg border border-border-default text-secondary text-sm", "aria-pressed": String(picker.kanjiFocus) },
+		[icon("flip", 16), picker.kanjiFocus ? "More radicals" : "More kanji"],
+		() => actions.toggleKanjiFocus(),
+	);
+	const panels = el("div", { class: "flex flex-col md:flex-row gap-2 md:gap-3 min-h-0 flex-1" }, [
+		radicalGrid(picker, actions),
 		flip,
-		kanjiPanel(picker, actions, isTouch, insert),
+		kanjiPanel(picker, actions, isTouch),
 	]);
-	arrowNavigation(panels);
 
-	const card = el("div", {
-		class: `bg-surface-elevated shadow-xl p-4 md:p-5 w-full md:max-w-2xl md:mx-4 md:rounded-xl rounded-t-xl ${picker.justOpened ? "animate-pop-in" : ""}`,
+	if (panel && panelsHost) {
+		panelsHost.replaceChildren(panels);
+		return panel;
+	}
+
+	panelsHost = el("div", { class: "flex flex-col min-h-0 flex-1" }, [panels]);
+	arrowNavigation(panelsHost);
+	panel = el("section", {
+		class: `z-40 bg-surface-elevated border border-border-default shadow-xl p-3 flex flex-col
+			fixed inset-x-0 bottom-0 h-[62dvh] rounded-t-xl
+			md:absolute md:inset-x-0 md:top-full md:bottom-auto md:mt-2 md:h-auto md:rounded-lg
+			${picker.justOpened ? "animate-pop-in" : ""}`,
 		role: "dialog",
-		"aria-modal": "true",
 		"aria-label": "Kanji by radical",
 	}, [
-		el("div", { class: "flex items-center justify-between mb-3" }, [
-			el("h2", { class: "text-primary text-lg font-semibold" }, ["Kanji by radical"]),
-			button({ class: "icon-button", "aria-label": "Close" }, [icon("x", 20)], close),
+		el("div", { class: "flex items-center justify-between mb-2 shrink-0" }, [
+			el("h2", { class: "section-label" }, ["Kanji by radical"]),
+			button({ class: "icon-button", "aria-label": "Close" }, [icon("x", 18)], () => actions.closeRadicalPicker()),
 		]),
-		queryField,
-		panels,
+		panelsHost,
 	]);
-	card.addEventListener("click", (e) => e.stopPropagation());
-	card.addEventListener("keydown", (e) => {
-		if (e.key === "Escape") close();
+	panel.addEventListener("keydown", (e) => {
+		if (e.key === "Escape") actions.closeRadicalPicker();
 	});
-
-	// Desktop: centred modal over a dimmed page. Phones: bottom sheet.
-	const overlay = el("div", { class: "fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/35 backdrop-blur-[2px]" }, [card]);
-	overlay.addEventListener("click", close);
-	return overlay;
+	return panel;
 }

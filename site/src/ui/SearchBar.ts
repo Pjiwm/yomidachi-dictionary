@@ -12,24 +12,24 @@ export function renderSearchBar(state: AppState, actions: Actions | null, size: 
 		inputmode: "search",
 		enterkeyhint: "search",
 		value: state.query,
-		placeholder: "Japanese or English, e.g. 食べる, たべる, eat",
+		placeholder: "Japanese or English",
 		autocomplete: "off",
 		autocapitalize: "off",
 		spellcheck: "false",
 		"aria-label": "Search the dictionary",
 		class: size === "large" ? "search-input text-lg pl-4 pr-36 py-3" : "search-input text-base pl-4 pr-32 py-2",
 	});
-	if (size === "large" && matchMedia("(hover: hover)").matches) input.autofocus = true;
+	if (size === "large" && !matchMedia("(pointer: coarse)").matches) input.autofocus = true;
 
 	const radicals = button(
 		{
-			class: `absolute inset-y-0 right-11 flex items-center justify-center min-w-11 text-muted hover:text-primary transition-colors ${state.radicalPicker ? "text-accent" : ""}`,
+			class: `absolute inset-y-0 right-11 flex items-center justify-center min-w-11 transition-colors ${state.radicalPicker ? "text-accent" : "text-muted hover:text-primary"}`,
 			"aria-label": "Find kanji by radical",
 			title: "Find kanji by radical",
 			"aria-expanded": String(Boolean(state.radicalPicker)),
 		},
 		[el("span", { class: `font-medium leading-none ${size === "large" ? "text-lg" : "text-base"}` }, ["部"])],
-		() => (state.radicalPicker ? actions?.closeRadicalPicker() : void actions?.openRadicalPicker(input.value)),
+		() => (state.radicalPicker ? actions?.closeRadicalPicker() : void actions?.openRadicalPicker()),
 	);
 	const clear = button(
 		{ class: "absolute inset-y-0 right-22 flex items-center justify-center min-w-10 text-muted hover:text-primary transition-colors", "aria-label": "Clear search" },
