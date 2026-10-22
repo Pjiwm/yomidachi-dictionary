@@ -8,6 +8,8 @@ export function renderSearchBar(state: AppState, actions: Actions | null, size: 
 	const input = el("input", {
 		type: "text",
 		name: "q",
+		inputmode: "search",
+		enterkeyhint: "search",
 		value: state.query,
 		placeholder: "Japanese or English, e.g. 食べる, たべる, eat",
 		autocomplete: "off",

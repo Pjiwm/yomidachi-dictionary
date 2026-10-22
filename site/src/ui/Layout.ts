@@ -54,8 +54,12 @@ function errorBanner(message: string): HTMLElement {
 	]);
 }
 
+/* Which pane a phone showed last, so only an actual switch animates, not every re-render. */
+let lastPane: "list" | "detail" | null = null;
+
 export function renderLayout(state: AppState, actions: Actions | null): HTMLElement {
 	if (state.route.kind === "home") {
+		lastPane = null;
 		const searchBar = renderSearchBar(state, actions, "large");
 		return el("div", { class: "min-h-dvh flex flex-col" }, [
 			skipLink(),
@@ -71,6 +75,11 @@ export function renderLayout(state: AppState, actions: Actions | null): HTMLElem
 	}
 
 	const showingDetail = state.route.kind !== "search";
+	const pane = showingDetail ? "detail" : "list";
+	const switched = lastPane !== null && lastPane !== pane;
+	lastPane = pane;
+	const listMotion = switched && !showingDetail ? "animate-pane-in-left" : "";
+	const detailMotion = switched && showingDetail ? "animate-pane-in-right" : "";
 	const searchBar = renderSearchBar(state, actions, "compact");
 	return el("div", { class: "h-dvh flex flex-col" }, [
 		skipLink(),
@@ -82,10 +91,10 @@ export function renderLayout(state: AppState, actions: Actions | null): HTMLElem
 		state.error ? errorBanner(state.error) : null,
 		resultsAnnouncer(state),
 		el("main", { id: "main", class: "flex-1 min-h-0 grid md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]" }, [
-			el("div", { class: `min-h-0 border-r border-border-subtle ${showingDetail ? "hidden md:flex" : "flex"} flex-col` }, [
+			el("div", { class: `min-h-0 border-r border-border-subtle ${showingDetail ? "hidden md:flex" : "flex"} flex-col ${listMotion}` }, [
 				renderResultsList(state, actions),
 			]),
-			el("div", { class: `min-h-0 ${showingDetail ? "flex" : "hidden md:flex"} flex-col` }, [
+			el("div", { class: `min-h-0 ${showingDetail ? "flex" : "hidden md:flex"} flex-col ${detailMotion}` }, [
 				renderDetail(state, actions),
 			]),
 		]),
