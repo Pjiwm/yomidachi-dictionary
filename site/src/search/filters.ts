@@ -73,3 +73,23 @@ export function resolveFilter(chip: FilterChip): ResolvedFilter | null {
 	if (!preset) return null;
 	return { ...base, codes: preset.codes, tags: [`${chip.prefix}:${preset.key}`], kind: "tags" };
 }
+
+/* The search token behind a JMdict tag, e.g. "v1" -> "pos:ichidan"; the most
+   specific option wins so "vt" maps to transitive rather than verb. */
+export function tokenForCode(code: string): string | null {
+	let best: { prefix: string; option: FilterOption } | null = null;
+	for (const prefix of ["pos", "is", "topic", "dialect"]) {
+		for (const option of TABLES[prefix]) {
+			if (!option.codes.includes(code)) continue;
+			if (!best || option.codes.length < best.option.codes.length) best = { prefix, option };
+		}
+	}
+	return best ? `${best.prefix}:${best.option.key}` : null;
+}
+
+/* Appends a token to a query unless it is already there. */
+export function withToken(query: string, token: string): string {
+	const words = query.trim().split(/\s+/).filter(Boolean);
+	if (!words.includes(token)) words.push(token);
+	return words.join(" ");
+}

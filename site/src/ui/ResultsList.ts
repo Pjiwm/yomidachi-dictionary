@@ -2,28 +2,37 @@ import type { Actions } from "../state/actions.ts";
 import { navigate } from "../state/router.ts";
 import type { AppState } from "../state/state.ts";
 import type { KanjiEntry, WordSummary } from "../types.ts";
-import { button, el, skeletonLines } from "./dom.ts";
+import { bone, button, el, skeleton } from "./dom.ts";
 import { icon } from "./icons.ts";
 
-const COLLAPSED_KANJI = 3;
+/* Two rows of tiles at the default width before "Show all" is needed. */
+const COLLAPSED_KANJI = 12;
 
-function firstReadings(readings: string, n = 2): string {
-	return readings.split(" ").filter(Boolean).slice(0, n).join("、 ");
+function firstMeaning(meanings: string): string {
+	return meanings.split(",")[0].trim();
 }
 
-function kanjiRow(k: KanjiEntry, query: string, selected: boolean): HTMLElement {
-	const readings = [firstReadings(k.readingsKun), firstReadings(k.readingsOn)].filter(Boolean).join(" · ");
+function kanjiTile(k: KanjiEntry, query: string, selected: boolean): HTMLElement {
 	return button(
-		{ class: `w-full text-left px-4 py-2 border-b border-border-subtle hover:bg-surface-sunken transition-colors ${selected ? "bg-surface-sunken" : ""}` },
+		{
+			class: `flex flex-col items-center justify-center gap-0.5 w-[4.25rem] h-[4.25rem] px-1 rounded-lg border transition-colors ${
+				selected ? "border-border-strong bg-surface-sunken" : "border-border-subtle hover:bg-surface-sunken"
+			}`,
+			title: k.meanings,
+		},
 		[
-			el("div", { class: "flex items-baseline gap-2" }, [
-				el("span", { class: "text-primary text-lg font-medium" }, [k.character]),
-				el("span", { class: "text-muted text-sm truncate" }, [readings]),
-			]),
-			el("div", { class: "text-secondary text-xs truncate" }, [k.meanings]),
+			el("span", { class: "text-primary text-2xl leading-none" }, [k.character]),
+			el("span", { class: "text-muted text-[10px] leading-tight text-center truncate w-full" }, [firstMeaning(k.meanings)]),
 		],
 		() => navigate({ kind: "kanji", character: k.character, query }),
 	);
+}
+
+function sectionHeader(title: string, count: number, action: HTMLElement | null): HTMLElement {
+	return el("div", { class: "sticky top-0 z-10 bg-surface flex items-center justify-between px-4 pt-3 pb-1.5 border-b border-border-subtle" }, [
+		el("h2", { class: "section-label" }, [title, " ", el("span", { class: "text-muted/70 tracking-normal" }, [String(count)])]),
+		action,
+	]);
 }
 
 function wordRow(w: WordSummary, query: string, selected: boolean): HTMLElement {
@@ -44,10 +53,15 @@ function wordRow(w: WordSummary, query: string, selected: boolean): HTMLElement 
 export function renderResultsList(state: AppState, actions: Actions | null): HTMLElement {
 	const empty = (text: string) => el("div", { class: "flex-1 flex items-center justify-center text-muted text-sm p-6" }, [text]);
 	if (state.searching) {
+		// Same shape as a word row: term, reading, then the gloss line.
 		return el("div", { class: "flex-1 min-h-0 overflow-hidden" }, Array.from({ length: 8 }, (_, i) =>
-			el("div", { class: "px-4 py-3 border-b border-border-subtle" }, [
-				skeletonLines([`${28 + ((i * 17) % 30)}%`, `${55 + ((i * 23) % 35)}%`]),
-			]),
+			skeleton(
+				[
+					el("div", { class: "flex items-end gap-2 mb-2" }, [bone(`${2.5 + (i % 3) * 0.75}rem`, "1.25rem"), bone("3rem", "0.875rem")]),
+					bone(`${45 + ((i * 23) % 40)}%`),
+				],
+				"px-4 py-2.5 border-b border-border-subtle",
+			),
 		));
 	}
 	if (!state.results) return empty("Type a word above to search.");
@@ -58,22 +72,28 @@ export function renderResultsList(state: AppState, actions: Actions | null): HTM
 	const route = state.route;
 	const selectedSequence = route.kind === "word" ? route.sequence : null;
 	const selectedKanji = route.kind === "kanji" ? route.character : null;
-	const shownKanji = state.kanjiExpanded ? kanji : kanji.slice(0, COLLAPSED_KANJI);
+	const sections: HTMLElement[] = [];
 
-	const rows: HTMLElement[] = shownKanji.map((k) => kanjiRow(k, state.query, k.character === selectedKanji));
-	if (kanji.length > COLLAPSED_KANJI) {
-		rows.push(
-			button(
-				{ class: "w-full flex items-center justify-center gap-1 px-4 py-1.5 border-b border-border-subtle text-[11px] text-muted hover:text-secondary" },
-				[
-					state.kanjiExpanded ? "Fewer kanji" : `All ${kanji.length} kanji`,
-					icon("chevronDown", 11),
-				],
-				() => actions?.toggleKanjiExpanded(),
-			),
+	if (kanji.length) {
+		const shown = state.kanjiExpanded ? kanji : kanji.slice(0, COLLAPSED_KANJI);
+		const toggle =
+			kanji.length > COLLAPSED_KANJI
+				? button(
+						{ class: "flex items-center gap-1 text-xs text-muted hover:text-secondary" },
+						[state.kanjiExpanded ? "Show fewer" : "Show all", icon("chevronDown", 12)],
+						() => actions?.toggleKanjiExpanded(),
+					)
+				: null;
+		if (toggle && state.kanjiExpanded) toggle.querySelector("svg")?.classList.add("rotate-180");
+		sections.push(
+			sectionHeader("Kanji", kanji.length, toggle),
+			el("div", { class: "flex flex-wrap gap-2 px-4 py-3 border-b border-border-subtle" }, shown.map((k) => kanjiTile(k, state.query, k.character === selectedKanji))),
 		);
 	}
-	rows.push(...words.map((w) => wordRow(w, state.query, w.sequence === selectedSequence)));
 
-	return el("div", { class: "flex-1 min-h-0 overflow-y-auto" }, rows);
+	if (words.length) {
+		sections.push(sectionHeader("Words", words.length, null), ...words.map((w) => wordRow(w, state.query, w.sequence === selectedSequence)));
+	}
+
+	return el("div", { class: "flex-1 min-h-0 overflow-y-auto" }, sections);
 }

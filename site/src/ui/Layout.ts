@@ -1,3 +1,4 @@
+import { withToken } from "../search/filters.ts";
 import type { Actions } from "../state/actions.ts";
 import type { AppState } from "../state/state.ts";
 import { button, el } from "./dom.ts";
@@ -5,6 +6,7 @@ import { renderDetail } from "./EntryDetail.ts";
 import { renderFooter } from "./Footer.ts";
 import { icon } from "./icons.ts";
 import { renderLanding } from "./Landing.ts";
+import { logo } from "./Logo.ts";
 import { renderResultsList } from "./ResultsList.ts";
 import { renderSearchBar } from "./SearchBar.ts";
 import { currentTheme, toggleTheme } from "./theme.ts";
@@ -23,15 +25,9 @@ function themeButton(): HTMLButtonElement {
 
 function wordmark(size: "large" | "small"): HTMLElement {
 	const classes = size === "large" ? "text-4xl font-semibold tracking-tight" : "font-semibold tracking-tight";
-	const logo = el("img", {
-		src: `${import.meta.env.BASE_URL}icons/favicon.svg`,
-		alt: "",
-		width: size === "large" ? "44" : "24",
-		height: size === "large" ? "44" : "24",
-		class: "self-center",
-	});
+	const mark = el("span", { class: "self-center" }, [logo(size === "large" ? 40 : 22)]);
 	return el("a", { href: "#/", class: `${classes} text-primary flex items-baseline gap-2` }, [
-		logo,
+		mark,
 		"Yomidachi",
 		el("span", { class: `text-muted font-normal ${size === "large" ? "text-xl" : "text-sm"}` }, ["Dictionary"]),
 	]);
@@ -50,9 +46,7 @@ export function renderLayout(state: AppState, actions: Actions | null): HTMLElem
 		const input = searchBar.querySelector("input");
 		const insertToken = (token: string) => {
 			if (!input) return;
-			const words = input.value.trim().split(/\s+/).filter(Boolean);
-			if (!words.includes(token)) words.push(token);
-			input.value = words.join(" ");
+			input.value = withToken(input.value, token);
 			input.focus();
 		};
 		return el("div", { class: "min-h-dvh flex flex-col" }, [

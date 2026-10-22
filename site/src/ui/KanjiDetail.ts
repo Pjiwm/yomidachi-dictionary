@@ -1,5 +1,5 @@
 import type { KanjiEntry } from "../types.ts";
-import { button, copyButton, el } from "./dom.ts";
+import { button, copyButton, el, filterChip } from "./dom.ts";
 import { icon } from "./icons.ts";
 
 function readings(title: string, value: string): HTMLElement | null {
@@ -10,7 +10,7 @@ function readings(title: string, value: string): HTMLElement | null {
 	]);
 }
 
-export function renderKanjiDetail(k: KanjiEntry): HTMLElement {
+export function renderKanjiDetail(k: KanjiEntry, query: string): HTMLElement {
 	const copyAll = () => {
 		const parts = [k.character, k.readingsKun && `訓: ${k.readingsKun}`, k.readingsOn && `音: ${k.readingsOn}`, k.meanings];
 		void navigator.clipboard.writeText(parts.filter(Boolean).join(" / "));
@@ -25,9 +25,9 @@ export function renderKanjiDetail(k: KanjiEntry): HTMLElement {
 		]),
 		el("div", { class: "text-secondary text-base leading-relaxed mb-4" }, [k.meanings]),
 		el("div", { class: "flex gap-2 flex-wrap" }, [
-			k.strokeCount ? el("span", { class: "chip" }, [`${k.strokeCount} strokes`]) : null,
-			k.jlptLevel ? el("span", { class: "chip" }, [`JLPT N${k.jlptLevel}`]) : null,
-			k.grade ? el("span", { class: "chip" }, [`Grade ${k.grade}`]) : null,
+			k.strokeCount ? filterChip(`${k.strokeCount} strokes`, `strokes:${k.strokeCount}`, query) : null,
+			k.jlptLevel ? filterChip(`JLPT N${k.jlptLevel}`, `jlpt:n${k.jlptLevel}`, query) : null,
+			k.grade ? filterChip(`Grade ${k.grade}`, `grade:grade_${k.grade}`, query) : null,
 		]),
 		readings("Kunyomi", k.readingsKun),
 		readings("Onyomi", k.readingsOn),

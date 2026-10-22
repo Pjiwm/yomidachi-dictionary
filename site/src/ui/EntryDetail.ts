@@ -1,9 +1,10 @@
 import type { Actions } from "../state/actions.ts";
 import { navigate } from "../state/router.ts";
 import type { AppState, WordDetail } from "../state/state.ts";
-import { formatPos } from "../search/pos.ts";
+import { tokenForCode } from "../search/filters.ts";
+import { formatPos, posCodes, posLabel } from "../search/pos.ts";
 import type { DictEntry, KanjiEntry } from "../types.ts";
-import { button, copyButton, el, skeletonLines } from "./dom.ts";
+import { bone, button, copyButton, el, filterChip, skeleton } from "./dom.ts";
 import { icon } from "./icons.ts";
 import { renderKanjiDetail } from "./KanjiDetail.ts";
 import { renderPitchDiagram } from "./PitchDiagram.ts";
@@ -108,9 +109,14 @@ function wordDetail(detail: WordDetail, query: string, actions: Actions | null):
 			button({ class: "flex items-center gap-1.5 px-3 py-2 border border-border-default rounded-lg text-muted hover:text-accent hover:border-accent transition-colors text-sm shrink-0" }, [icon("copy", 16), "Copy entry"], copyAll),
 		]),
 		el("div", { class: "flex gap-2 mt-3 flex-wrap" }, [
-			primary.frequency > 0 ? el("span", { class: "chip border-common text-common" }, ["common"]) : null,
-			primary.jlptLevel ? el("span", { class: "chip" }, [`JLPT N${primary.jlptLevel}`]) : null,
-			...formatPos(primary.pos).map((label) => el("span", { class: "chip-filled" }, [label])),
+			primary.frequency > 0 ? filterChip("common", "is:common", query, "chip border-common text-common") : null,
+			primary.jlptLevel ? filterChip(`JLPT N${primary.jlptLevel}`, `jlpt:n${primary.jlptLevel}`, query) : null,
+			...posCodes(primary.pos).map((code) => {
+				const label = posLabel(code);
+				const token = tokenForCode(code);
+				if (!label) return null;
+				return token ? filterChip(label, token, query, "chip-filled") : el("span", { class: "chip-filled" }, [label]);
+			}),
 		]),
 		section("Meanings", senses.map((s, i) => senseRow(s, i, actions))),
 		otherForms.length
@@ -124,15 +130,22 @@ export function renderDetail(state: AppState, actions: Actions | null): HTMLElem
 	const centered = (text: string) => el("div", { class: "flex-1 flex items-center justify-center text-muted text-sm p-6" }, [text]);
 	let body: HTMLElement;
 	if (state.detailLoading) {
-		body = el("div", { class: "p-6" }, [
-			el("div", { class: "animate-pulse h-9 w-40 rounded bg-surface-sunken mb-3" }),
-			skeletonLines(["30%", "20%"], { class: "mb-8" }),
-			skeletonLines(["70%", "55%", "80%", "45%", "65%"]),
-		]);
+		// Same shape as an entry: headword, reading, chips, then numbered meanings.
+		body = skeleton(
+			[
+				bone("9rem", "2.25rem", "mb-3"),
+				bone("5rem", "1.125rem", "mb-4"),
+				el("div", { class: "flex gap-2 mb-8" }, [bone("4rem", "1.25rem"), bone("5rem", "1.25rem")]),
+				...["70%", "55%", "80%", "45%"].map((w) =>
+					el("div", { class: "flex gap-3 items-center mb-4" }, [bone("1rem", "0.875rem"), bone(w, "0.875rem")]),
+				),
+			],
+			"p-6",
+		);
 	}
 	else if (!state.detail) body = centered("Select a word to see its entry.");
 	else if (state.detail.kind === "missing") body = centered("Not found.");
-	else if (state.detail.kind === "kanji") body = renderKanjiDetail(state.detail.entry);
+	else if (state.detail.kind === "kanji") body = renderKanjiDetail(state.detail.entry, state.query);
 	else body = wordDetail(state.detail, state.query, actions);
 
 	return el("div", { class: "flex-1 min-h-0 overflow-y-auto flex flex-col" }, [

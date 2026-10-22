@@ -7,6 +7,8 @@ import type { Store } from "./state.ts";
 import type { SearchResults } from "../types.ts";
 
 const RESULT_LIMIT = 50;
+/* Below this a lookup feels instant; showing a skeleton would only flash. */
+const SKELETON_DELAY_MS = 180;
 
 /* Translates route changes into repository calls and store updates. A
    search or detail load that finishes after a newer one started is dropped. */
@@ -44,7 +46,10 @@ export class Actions {
 			this.store.update({ results: null, searching: false });
 			return;
 		}
-		this.store.update({ searching: true, error: null });
+		this.store.update({ error: null });
+		const skeleton = setTimeout(() => {
+			if (token === this.searchToken) this.store.update({ searching: true });
+		}, SKELETON_DELAY_MS);
 		try {
 			const results = await this.runSearch(query);
 			if (token !== this.searchToken) return;
@@ -53,6 +58,8 @@ export class Actions {
 			if (token !== this.searchToken) return;
 			console.error(err);
 			this.store.update({ results: { words: [], kanji: [] }, searching: false });
+		} finally {
+			clearTimeout(skeleton);
 		}
 	}
 
@@ -77,9 +84,10 @@ export class Actions {
 
 	private async loadWord(sequence: number): Promise<void> {
 		const token = ++this.detailToken;
-		this.store.update({ detailLoading: true });
+		const skeleton = this.delayedDetailSkeleton(token);
 		const senses = await this.repository.wordDetails(sequence).catch(() => []);
 		const kanji = senses.length ? await this.repository.kanjiForWord(senses[0].term).catch(() => []) : [];
+		clearTimeout(skeleton);
 		if (token !== this.detailToken) return;
 		this.store.update({
 			detail: senses.length ? { kind: "word", senses, kanji } : { kind: "missing" },
@@ -89,10 +97,17 @@ export class Actions {
 
 	private async loadKanji(character: string): Promise<void> {
 		const token = ++this.detailToken;
-		this.store.update({ detailLoading: true });
+		const skeleton = this.delayedDetailSkeleton(token);
 		const entry = await this.repository.kanji(character).catch(() => null);
+		clearTimeout(skeleton);
 		if (token !== this.detailToken) return;
 		this.store.update({ detail: entry ? { kind: "kanji", entry } : { kind: "missing" }, detailLoading: false });
+	}
+
+	private delayedDetailSkeleton(token: number): ReturnType<typeof setTimeout> {
+		return setTimeout(() => {
+			if (token === this.detailToken) this.store.update({ detailLoading: true });
+		}, SKELETON_DELAY_MS);
 	}
 
 	toggleKanjiExpanded(): void {

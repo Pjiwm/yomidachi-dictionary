@@ -1,3 +1,5 @@
+import { withToken } from "../search/filters.ts";
+import { navigate } from "../state/router.ts";
 import { icon } from "./icons.ts";
 
 /* Tiny element builder so views stay readable without a framework. */
@@ -63,11 +65,21 @@ export function animatedDetails(attrs: Record<string, string>, summary: HTMLElem
 	return details;
 }
 
-/* Placeholder bars while a lookup is in flight, so panes don't flash empty text. */
-export function skeletonLines(widths: string[], attrs: Record<string, string> = {}): HTMLElement {
-	return el(
-		"div",
-		{ ...attrs, class: `animate-pulse space-y-3 ${attrs.class ?? ""}`, "aria-busy": "true" },
-		widths.map((w) => el("div", { class: "h-3 rounded bg-surface-sunken", style: `width: ${w}` })),
+/* A placeholder block the size of the text it stands in for. */
+export function bone(width: string, height = "0.75rem", extra = ""): HTMLElement {
+	return el("div", { class: `rounded bg-primary/8 ${extra}`, style: `width: ${width}; height: ${height}` });
+}
+
+/* A pulsing group of bones; aria-busy so screen readers skip the shapes. */
+export function skeleton(children: HTMLElement[], extra = ""): HTMLElement {
+	return el("div", { class: `animate-pulse ${extra}`, "aria-busy": "true" }, children);
+}
+
+/* A tag chip that adds its filter to the current search when clicked. */
+export function filterChip(label: string, token: string, query: string, extra = "chip"): HTMLElement {
+	return button(
+		{ class: `${extra} hover:border-accent hover:text-accent transition-colors`, title: token },
+		[label],
+		() => navigate({ kind: "search", query: withToken(query, token) }),
 	);
 }

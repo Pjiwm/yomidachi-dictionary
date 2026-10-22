@@ -180,14 +180,14 @@ const POS_LABELS: Record<string, string> = {
 };
 
 /* "1 v1 vt" is the sense number followed by its tags. */
-export function formatPos(pos: string | null | undefined): string[] {
-	if (!pos) return [];
-	return pos
-		.replace(/^\d+\s+/, "")
-		.split(" ")
-		.flatMap((tag) => POS_LABELS[tag] ?? []);
-}
-
 export function posCodes(pos: string | null | undefined): string[] {
 	return pos ? pos.replace(/^\d+\s+/, "").split(" ").filter(Boolean) : [];
+}
+
+export function formatPos(pos: string | null | undefined): string[] {
+	return posCodes(pos).flatMap((tag) => POS_LABELS[tag] ?? []);
+}
+
+export function posLabel(code: string): string | null {
+	return POS_LABELS[code] ?? null;
 }
