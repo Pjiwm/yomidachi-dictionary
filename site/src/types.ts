@@ -13,6 +13,15 @@ export interface DictEntry {
 	references: string[];
 }
 
+/* One search result per word, served straight from the site's search tables. */
+export interface WordSummary {
+	sequence: number;
+	term: string;
+	reading: string;
+	gloss: string;
+	common: boolean;
+}
+
 export interface KanjiEntry {
 	character: string;
 	strokeCount: number | null;
@@ -29,7 +38,7 @@ export interface Radical {
 }
 
 export interface SearchResults {
-	words: DictEntry[];
+	words: WordSummary[];
 	kanji: KanjiEntry[];
 }
 
