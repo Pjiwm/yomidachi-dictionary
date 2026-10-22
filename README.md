@@ -1,5 +1,7 @@
 # Vocabulizer Dictionary CLI
 
+**Search the dictionary:** https://pjiwm.github.io/yomidachi-dictionary/#/
+
 CLI tool for building Japanese dictionary SQLite databases from JMdict/KANJIDIC source data.
 
 ## Setup
@@ -34,10 +36,6 @@ cd site && npm install && npm run dev
 
 `npm run build` writes `site/dist/`. Deploys are manual: Actions → "Build and
 deploy the dictionary site" → Run workflow.
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Data Attribution
 
