@@ -28,8 +28,8 @@ function wordmark(size: "large" | "small"): HTMLElement {
 	const mark = el("span", { class: "self-center" }, [logo(size === "large" ? 40 : 22)]);
 	return el("a", { href: "#/", class: `${classes} text-primary flex items-baseline gap-2 shrink-0`, "aria-label": "Yomidachi Dictionary, home" }, [
 		mark,
-		el("span", { class: size === "small" ? "hidden sm:inline" : "" }, ["Yomidachi"]),
-		el("span", { class: `text-muted font-normal ${size === "large" ? "text-xl" : "text-sm hidden md:inline"}` }, ["Dictionary"]),
+		el("span", {}, ["Yomidachi"]),
+		el("span", { class: `text-muted font-normal ${size === "large" ? "text-xl" : "text-sm"}` }, ["Dictionary"]),
 	]);
 }
 
@@ -67,10 +67,11 @@ export function renderLayout(state: AppState, actions: Actions | null): HTMLElem
 			state.error ? errorBanner(state.error) : null,
 			el("main", { id: "main", class: "flex-1 flex flex-col items-center px-4 pt-[5vh] pb-12 gap-6" }, [
 				el("h1", { class: "contents" }, [wordmark("large")]),
-				el("div", { class: "relative w-full max-w-4xl" }, [searchBar, renderRadicalPicker(state, actions)]),
+				el("div", { class: "relative w-full max-w-4xl" }, [searchBar]),
 				renderLanding(state),
 			]),
 			renderFooter(state, actions),
+			renderRadicalPicker(state, actions),
 		]);
 	}
 
@@ -87,7 +88,7 @@ export function renderLayout(state: AppState, actions: Actions | null): HTMLElem
 		el("header", { class: "border-b border-border-subtle px-3 sm:px-4 py-2 flex flex-wrap items-center gap-x-4 gap-y-2" }, [
 			wordmark("small"),
 			el("div", { class: "ml-auto sm:order-3" }, [themeButton()]),
-			el("div", { class: "relative basis-full sm:basis-auto sm:flex-1 sm:max-w-3xl sm:order-2" }, [searchBar, renderRadicalPicker(state, actions)]),
+			el("div", { class: "relative basis-full sm:basis-auto sm:flex-1 sm:max-w-3xl sm:order-2" }, [searchBar]),
 		]),
 		state.error ? errorBanner(state.error) : null,
 		resultsAnnouncer(state),
@@ -99,5 +100,6 @@ export function renderLayout(state: AppState, actions: Actions | null): HTMLElem
 				renderDetail(state, actions),
 			]),
 		]),
+		renderRadicalPicker(state, actions),
 	]);
 }

@@ -22,6 +22,8 @@ export interface RadicalPicker {
 	total: number;
 	/* True only for the render right after opening, so the pop-in plays once. */
 	justOpened: boolean;
+	/* Phones only: the kanji panel takes the larger share of the sheet. */
+	kanjiFocus: boolean;
 }
 
 /* Written by scripts/prepare_site_db.py next to the database chunks. */

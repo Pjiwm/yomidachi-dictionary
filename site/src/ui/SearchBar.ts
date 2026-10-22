@@ -8,6 +8,7 @@ export function renderSearchBar(state: AppState, actions: Actions | null, size: 
 	const input = el("input", {
 		type: "text",
 		name: "q",
+		"data-draft": "q",
 		inputmode: "search",
 		enterkeyhint: "search",
 		value: state.query,
@@ -28,7 +29,7 @@ export function renderSearchBar(state: AppState, actions: Actions | null, size: 
 			"aria-expanded": String(Boolean(state.radicalPicker)),
 		},
 		[el("span", { class: `font-medium leading-none ${size === "large" ? "text-lg" : "text-base"}` }, ["部"])],
-		() => (state.radicalPicker ? actions?.closeRadicalPicker() : void actions?.openRadicalPicker()),
+		() => (state.radicalPicker ? actions?.closeRadicalPicker() : void actions?.openRadicalPicker(input.value)),
 	);
 	const clear = button(
 		{ class: "absolute inset-y-0 right-22 flex items-center justify-center min-w-10 text-muted hover:text-primary transition-colors", "aria-label": "Clear search" },
