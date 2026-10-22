@@ -15,6 +15,7 @@ import type {
 const PREFIX_END = "\u{10FFFF}";
 const KANJI_LIMIT = 60;
 const KANJI_PANEL_LIMIT = 100;
+const RADICAL_MATCH_LIMIT = 80;
 
 const ENTRY_SELECT = `
 	SELECT s.id, s.sequence, s.term, s.reading, s.pos, s.frequency, s.translation,
@@ -72,6 +73,12 @@ interface SummaryRow {
 	reading: string;
 	gloss: string;
 	common: number;
+}
+
+interface KanjiRadicalsRow {
+	character: string;
+	stroke_count: number;
+	radicals: string;
 }
 
 interface KanjiRow {
@@ -132,6 +139,10 @@ function parseSeeReference(gloss: string): string | null {
 /* The only module that contains SQL. Every query is checked against the
    indexes with EXPLAIN QUERY PLAN: over HTTP a table scan is unusable. */
 export class DictRepository {
+	/* Loaded once when the picker opens: about 250 KB read in one sweep beats
+	   a round trip per kanji on every radical toggle. */
+	private kanjiRadicals: Promise<{ character: string; strokes: number; radicals: Set<string> }[]> | null = null;
+
 	constructor(private readonly db: DbWorker) {}
 
 	private query<T>(sql: string, ...params: unknown[]): Promise<T[]> {
@@ -425,12 +436,30 @@ export class DictRepository {
 		return rows.map(toKanji);
 	}
 
-	async kanjiByRadicals(_radicals: string[]): Promise<RadicalSearchResult> {
-		return { kanji: [], available: [] };
+	async radicals(): Promise<Radical[]> {
+		return this.query<Radical>("SELECT radical, strokes FROM radical ORDER BY strokes, radical");
 	}
 
-	async radicals(): Promise<Radical[]> {
-		return [];
+	/* Kanji containing every selected radical, and the radicals that can still narrow them. */
+	async kanjiByRadicals(selected: string[]): Promise<RadicalSearchResult> {
+		this.kanjiRadicals ??= this.query<KanjiRadicalsRow>("SELECT character, stroke_count, radicals FROM kanji_radicals").then((rows) =>
+			rows.map((r) => ({ character: r.character, strokes: r.stroke_count, radicals: new Set(r.radicals.split(" ")) })),
+		);
+		const all = await this.kanjiRadicals;
+		if (selected.length === 0) return { kanji: [], total: 0, available: [] };
+
+		const matches = all
+			.filter((k) => selected.every((r) => k.radicals.has(r)))
+			.sort((a, b) => a.strokes - b.strokes || a.character.localeCompare(b.character));
+		const available = new Set<string>();
+		for (const k of matches) for (const r of k.radicals) available.add(r);
+
+		const shown = matches.slice(0, RADICAL_MATCH_LIMIT).map((k) => k.character);
+		const rows = shown.length
+			? await this.query<KanjiRow>(`${KANJI_SELECT} WHERE character IN (${placeholders(shown.length)})`, ...shown)
+			: [];
+		const byChar = new Map(rows.map((r) => [r.character, toKanji(r)]));
+		return { kanji: shown.flatMap((c) => byChar.get(c) ?? []), total: matches.length, available: [...available] };
 	}
 
 	/* A cross-reference names a headword or a reading; pick the best-ranked match. */

@@ -109,13 +109,13 @@ function wordDetail(detail: WordDetail, query: string, actions: Actions | null):
 			button({ class: "flex items-center gap-1.5 px-3 py-2 border border-border-default rounded-lg text-muted hover:text-accent hover:border-accent transition-colors text-sm shrink-0" }, [icon("copy", 16), "Copy entry"], copyAll),
 		]),
 		el("div", { class: "flex gap-2 mt-3 flex-wrap" }, [
-			primary.frequency > 0 ? filterChip("common", "is:common", query, "chip border-common text-common") : null,
-			primary.jlptLevel ? filterChip(`JLPT N${primary.jlptLevel}`, `jlpt:n${primary.jlptLevel}`, query) : null,
+			primary.frequency > 0 ? filterChip("common", "is:common", "chip border-common text-common") : null,
+			primary.jlptLevel ? filterChip(`JLPT N${primary.jlptLevel}`, `jlpt:n${primary.jlptLevel}`) : null,
 			...posCodes(primary.pos).map((code) => {
 				const label = posLabel(code);
 				const token = tokenForCode(code);
 				if (!label) return null;
-				return token ? filterChip(label, token, query, "chip-filled") : el("span", { class: "chip-filled" }, [label]);
+				return token ? filterChip(label, token, "chip-filled") : el("span", { class: "chip-filled" }, [label]);
 			}),
 		]),
 		section("Meanings", senses.map((s, i) => senseRow(s, i, actions))),
@@ -145,7 +145,7 @@ export function renderDetail(state: AppState, actions: Actions | null): HTMLElem
 	}
 	else if (!state.detail) body = centered("Select a word to see its entry.");
 	else if (state.detail.kind === "missing") body = centered("Not found.");
-	else if (state.detail.kind === "kanji") body = renderKanjiDetail(state.detail.entry, state.query);
+	else if (state.detail.kind === "kanji") body = renderKanjiDetail(state.detail.entry);
 	else body = wordDetail(state.detail, state.query, actions);
 
 	return el("div", { class: "flex-1 min-h-0 overflow-y-auto flex flex-col" }, [

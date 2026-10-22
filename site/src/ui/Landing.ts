@@ -9,7 +9,7 @@ import {
 	TOPIC_FILTERS,
 } from "../search/filters.ts";
 import type { AppState } from "../state/state.ts";
-import { animatedDetails, button, el } from "./dom.ts";
+import { animatedDetails, button, el, insertIntoSearch } from "./dom.ts";
 import { icon } from "./icons.ts";
 
 interface FilterGroup {
@@ -61,12 +61,12 @@ function code(text: string): HTMLElement {
 	return el("code", { class: "font-mono text-sm text-primary bg-surface-sunken px-1.5 py-0.5 rounded" }, [text]);
 }
 
-function chipButton(token: string, label: string, insert: (token: string) => void): HTMLElement {
-	return button({ class: "chip hover:border-accent hover:text-accent transition-colors", title: token }, [label], () => insert(token));
+function chipButton(token: string, label: string): HTMLElement {
+	return button({ class: "chip hover:border-accent hover:text-accent transition-colors", title: token }, [label], () => insertIntoSearch(token, true));
 }
 
-function group(g: FilterGroup, insert: (token: string) => void): HTMLElement {
-	const chips = g.options.map((o) => chipButton(`${g.prefix}:${o.key}`, o.label, insert));
+function group(g: FilterGroup): HTMLElement {
+	const chips = g.options.map((o) => chipButton(`${g.prefix}:${o.key}`, o.label));
 	return animatedDetails(
 		{ class: "group border-b border-border-subtle" },
 		el("summary", { class: "flex items-center justify-between py-2 cursor-pointer list-none text-sm text-primary" }, [
@@ -80,7 +80,7 @@ function group(g: FilterGroup, insert: (token: string) => void): HTMLElement {
 	);
 }
 
-export function renderLanding(state: AppState, insert: (token: string) => void): HTMLElement {
+export function renderLanding(state: AppState): HTMLElement {
 	const meta = state.meta;
 	const inside = meta
 		? `${format(meta.words)} words and ${format(meta.kanji)} kanji, with pitch accent, JLPT levels and frequency ranks. Data as of ${meta.builtAt}.`
@@ -92,7 +92,7 @@ export function renderLanding(state: AppState, insert: (token: string) => void):
 			code("eat pos:verb jlpt:n5"),
 			", or click one:",
 		]),
-		el("div", { class: "flex flex-wrap gap-1.5 mt-3" }, QUICK.map(([token, label]) => chipButton(token, label, insert))),
+		el("div", { class: "flex flex-wrap gap-1.5 mt-3" }, QUICK.map(([token, label]) => chipButton(token, label))),
 		animatedDetails(
 			{ class: "group mt-4" },
 			el("summary", { class: "inline-flex items-center gap-1 cursor-pointer list-none text-sm text-muted hover:text-secondary" }, [
@@ -100,7 +100,7 @@ export function renderLanding(state: AppState, insert: (token: string) => void):
 				el("span", { class: "transition-transform duration-300 group-open:rotate-180" }, [icon("chevronDown", 14)]),
 			]),
 			el("div", {}, [
-				el("div", { class: "mt-2 border-t border-border-subtle" }, GROUPS.map((g) => group(g, insert))),
+				el("div", { class: "mt-2 border-t border-border-subtle" }, GROUPS.map((g) => group(g))),
 				el("dl", { class: "grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm mt-4" }, SYNTAX.flatMap(([syntax, help]) => [
 					el("dt", {}, [code(syntax)]),
 					el("dd", { class: "text-secondary" }, [help]),

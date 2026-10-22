@@ -11,7 +11,18 @@ if (!root) throw new Error("missing #app");
 const store = new Store();
 let actions: Actions | null = null;
 
-store.subscribe((state) => root.replaceChildren(renderLayout(state, actions)));
+/* Every update rebuilds the DOM, so unsent text in the search field has to survive the swap. */
+store.subscribe((state) => {
+	const previous = root.querySelector<HTMLInputElement>("input[name=q]");
+	const draft = previous && document.activeElement === previous ? { value: previous.value, cursor: previous.selectionStart } : null;
+	root.replaceChildren(renderLayout(state, actions));
+	if (!draft) return;
+	const input = root.querySelector<HTMLInputElement>("input[name=q]");
+	if (!input) return;
+	input.value = draft.value;
+	input.focus();
+	input.setSelectionRange(draft.cursor, draft.cursor);
+});
 store.update({});
 followSystemTheme();
 

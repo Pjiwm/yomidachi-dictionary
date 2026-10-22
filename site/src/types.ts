@@ -43,6 +43,8 @@ export interface SearchResults {
 }
 
 export interface RadicalSearchResult {
+	/* The first matches by stroke count; `total` counts all of them. */
 	kanji: KanjiEntry[];
+	total: number;
 	available: string[];
 }

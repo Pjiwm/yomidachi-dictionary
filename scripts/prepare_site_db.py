@@ -107,7 +107,8 @@ def build_search_tables(conn: sqlite3.Connection) -> None:
 
     Over HTTP every row visited is a round trip, so a search must read one
     contiguous key range and nothing else. These tables make that possible;
-    the original tables stay for the detail views.
+    the original tables stay for the detail views. kanji_radicals is small
+    enough that the radical picker reads it whole and intersects in the browser.
     """
     conn.executescript(
         f"""
@@ -116,6 +117,7 @@ def build_search_tables(conn: sqlite3.Connection) -> None:
         DROP TABLE IF EXISTS en_index;
         DROP TABLE IF EXISTS tag_index;
         DROP TABLE IF EXISTS kanji_reading;
+        DROP TABLE IF EXISTS kanji_radicals;
 
         CREATE TABLE word_summary (
             sequence INTEGER PRIMARY KEY,
@@ -153,6 +155,16 @@ def build_search_tables(conn: sqlite3.Connection) -> None:
             character TEXT NOT NULL,
             PRIMARY KEY (reading, character)
         ) WITHOUT ROWID;
+
+        CREATE TABLE kanji_radicals (
+            character TEXT PRIMARY KEY,
+            stroke_count INTEGER NOT NULL,
+            radicals TEXT NOT NULL
+        ) WITHOUT ROWID;
+        INSERT INTO kanji_radicals
+        SELECT kr.character, coalesce(k.stroke_count, 0), group_concat(kr.radical, ' ')
+        FROM kanji_radical kr JOIN kanji k ON k.character = kr.character
+        GROUP BY kr.character;
 
         CREATE INDEX idx_kanji_grade ON kanji(grade, stroke_count);
         CREATE INDEX idx_kanji_strokes ON kanji(stroke_count);

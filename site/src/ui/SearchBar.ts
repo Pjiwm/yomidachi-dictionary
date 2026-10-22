@@ -4,7 +4,7 @@ import type { AppState } from "../state/state.ts";
 import { button, el } from "./dom.ts";
 import { icon } from "./icons.ts";
 
-export function renderSearchBar(state: AppState, _actions: Actions | null, size: "large" | "compact"): HTMLElement {
+export function renderSearchBar(state: AppState, actions: Actions | null, size: "large" | "compact"): HTMLElement {
 	const input = el("input", {
 		type: "text",
 		name: "q",
@@ -14,12 +14,21 @@ export function renderSearchBar(state: AppState, _actions: Actions | null, size:
 		autocapitalize: "off",
 		spellcheck: "false",
 		"aria-label": "Search the dictionary",
-		class: size === "large" ? "search-input text-lg pl-12 pr-12 py-3" : "search-input text-base pl-10 pr-10 py-2",
+		class: size === "large" ? "search-input text-lg pl-12 pr-24 py-3" : "search-input text-base pl-10 pr-20 py-2",
 	});
 	if (size === "large") input.autofocus = true;
 
+	const radicals = button(
+		{
+			class: `absolute inset-y-0 right-0 flex items-center text-muted hover:text-primary transition-colors ${size === "large" ? "px-4" : "px-3"} ${state.radicalPicker ? "text-accent" : ""}`,
+			"aria-label": "Find kanji by radical",
+			title: "Find kanji by radical",
+		},
+		[el("span", { class: `font-medium leading-none ${size === "large" ? "text-lg" : "text-base"}` }, ["部"])],
+		() => (state.radicalPicker ? actions?.closeRadicalPicker() : void actions?.openRadicalPicker()),
+	);
 	const clear = button(
-		{ class: `absolute inset-y-0 right-0 flex items-center text-muted hover:text-primary transition-colors ${size === "large" ? "px-4" : "px-3"}`, "aria-label": "Clear search" },
+		{ class: `absolute inset-y-0 flex items-center text-muted hover:text-primary transition-colors ${size === "large" ? "right-11 px-2" : "right-9 px-2"}`, "aria-label": "Clear search" },
 		[icon("x", size === "large" ? 18 : 16)],
 		() => {
 			input.value = "";
@@ -28,11 +37,12 @@ export function renderSearchBar(state: AppState, _actions: Actions | null, size:
 		},
 	);
 	const form = el("form", { role: "search", class: "relative" }, [
-		el("span", { class: `absolute inset-y-0 flex items-center text-muted pointer-events-none ${size === "large" ? "left-4" : "left-3"}` }, [
+		el("button", { type: "submit", "aria-label": "Search", class: `absolute inset-y-0 flex items-center text-muted hover:text-primary transition-colors ${size === "large" ? "left-4" : "left-3"}` }, [
 			icon("search", size === "large" ? 20 : 16),
 		]),
 		input,
 		clear,
+		radicals,
 	]);
 	const syncClear = () => clear.classList.toggle("hidden", input.value === "");
 	input.addEventListener("input", syncClear);

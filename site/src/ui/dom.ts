@@ -1,5 +1,4 @@
 import { withToken } from "../search/filters.ts";
-import { navigate } from "../state/router.ts";
 import { icon } from "./icons.ts";
 
 /* Tiny element builder so views stay readable without a framework. */
@@ -75,11 +74,20 @@ export function skeleton(children: HTMLElement[], extra = ""): HTMLElement {
 	return el("div", { class: `animate-pulse ${extra}`, "aria-busy": "true" }, children);
 }
 
-/* A tag chip that adds its filter to the current search when clicked. */
-export function filterChip(label: string, token: string, query: string, extra = "chip"): HTMLElement {
+/* Appends to the search field without submitting, so chips and the radical
+   picker compose a query the visitor sends when ready. */
+export function insertIntoSearch(text: string, asToken: boolean): void {
+	const input = document.querySelector<HTMLInputElement>("input[name=q]");
+	if (!input) return;
+	input.value = asToken ? withToken(input.value, text) : input.value + text;
+	input.focus();
+}
+
+/* A tag chip that adds its filter to the search field when clicked. */
+export function filterChip(label: string, token: string, extra = "chip"): HTMLElement {
 	return button(
 		{ class: `${extra} hover:border-accent hover:text-accent transition-colors`, title: token },
 		[label],
-		() => navigate({ kind: "search", query: withToken(query, token) }),
+		() => insertIntoSearch(token, true),
 	);
 }

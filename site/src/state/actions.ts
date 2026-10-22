@@ -110,6 +110,39 @@ export class Actions {
 		}, SKELETON_DELAY_MS);
 	}
 
+	async openRadicalPicker(): Promise<void> {
+		if (this.store.current.radicalPicker) return;
+		const radicals = await this.repository.radicals().catch(() => []);
+		this.store.update({ radicalPicker: { radicals, selected: [], available: [], kanji: [], total: 0 } });
+	}
+
+	closeRadicalPicker(): void {
+		this.store.update({ radicalPicker: null });
+	}
+
+	async toggleRadical(radical: string): Promise<void> {
+		const picker = this.store.current.radicalPicker;
+		if (!picker) return;
+		const selected = picker.selected.includes(radical)
+			? picker.selected.filter((r) => r !== radical)
+			: [...picker.selected, radical];
+		await this.selectRadicals(selected);
+	}
+
+	async clearRadicals(): Promise<void> {
+		await this.selectRadicals([]);
+	}
+
+	private async selectRadicals(selected: string[]): Promise<void> {
+		const picker = this.store.current.radicalPicker;
+		if (!picker) return;
+		this.store.update({ radicalPicker: { ...picker, selected } });
+		const result = await this.repository.kanjiByRadicals(selected).catch(() => ({ kanji: [], total: 0, available: [] }));
+		const current = this.store.current.radicalPicker;
+		if (!current || current.selected !== selected) return;
+		this.store.update({ radicalPicker: { ...current, ...result } });
+	}
+
 	toggleKanjiExpanded(): void {
 		this.store.update({ kanjiExpanded: !this.store.current.kanjiExpanded });
 	}

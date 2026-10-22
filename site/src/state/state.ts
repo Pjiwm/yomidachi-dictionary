@@ -19,6 +19,7 @@ export interface RadicalPicker {
 	selected: string[];
 	available: string[];
 	kanji: KanjiEntry[];
+	total: number;
 }
 
 /* Written by scripts/prepare_site_db.py next to the database chunks. */
