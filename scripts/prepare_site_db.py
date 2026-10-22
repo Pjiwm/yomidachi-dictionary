@@ -20,12 +20,86 @@ CHUNK_PREFIX = "db.sqlite3."
 KATAKANA_OFFSET = 0x60
 SUMMARY_GLOSS_CHARS = 80
 UNRANKED = 1_000_000
+FILTERS_JSON = ROOT_DIR / "site" / "src" / "search" / "filters.json"
+COMBINING_SMALL_KANA = set("ゃゅょぁぃぅぇぉャュョァィゥェォ")
 
 
 def to_hiragana(text: str) -> str:
     return "".join(
         chr(ord(c) - KATAKANA_OFFSET) if "\u30a1" <= c <= "\u30f6" else c for c in text
     )
+
+
+def mora_count(reading: str) -> int:
+    return sum(1 for c in reading if c not in COMBINING_SMALL_KANA)
+
+
+def pitch_type(moras: int, downstep: int) -> str:
+    if downstep == 0:
+        return "heiban"
+    if downstep == 1:
+        return "atamadaka"
+    if downstep == moras:
+        return "odaka"
+    return "nakadaka"
+
+
+def word_tags(conn: sqlite3.Connection) -> list:
+    """Every (tag, rank, sequence) a filter can match, tags named prefix:key as in filters.json."""
+    filters = json.loads(FILTERS_JSON.read_text())
+    code_tags = {}
+    for prefix in ("pos", "is", "topic", "dialect"):
+        for option in filters[prefix]:
+            for code in option["codes"]:
+                code_tags.setdefault(code, set()).add(f"{prefix}:{option['key']}")
+    grade_tags = {}
+    for option in filters["grade"]:
+        for code in option["codes"]:
+            grade_tags.setdefault(int(code), set()).add(f"grade:{option['key']}")
+
+    tags = {}
+
+    def add(sequence, tag):
+        tags.setdefault(sequence, set()).add(tag)
+
+    for sequence, rank, jlpt in conn.execute("SELECT w.sequence, ws.rank, w.jlpt_level FROM words w JOIN word_summary ws USING (sequence)"):
+        tags[sequence] = set()
+        if jlpt is not None:
+            add(sequence, f"jlpt:n{jlpt}")
+    for sequence, pos, frequency, reading, pitch in conn.execute(
+        "SELECT sequence, pos, frequency, reading, pitch_accent FROM senses"
+    ):
+        for code in (pos or "").split():
+            for tag in code_tags.get(code, ()):
+                add(sequence, tag)
+        if frequency and frequency > 0:
+            add(sequence, "is:common")
+        if pitch:
+            moras = mora_count(reading)
+            for part in pitch.split(","):
+                if part.strip().isdigit():
+                    add(sequence, f"pitch:{pitch_type(moras, int(part))}")
+    for sequence, grade, strokes in conn.execute(
+        "SELECT m.sequence, k.grade, k.stroke_count FROM kanji_word_map m JOIN kanji k USING (character)"
+    ):
+        for tag in grade_tags.get(grade, ()):
+            add(sequence, tag)
+        if strokes:
+            add(sequence, f"strokes:{strokes}")
+
+    ranks = dict(conn.execute("SELECT sequence, rank FROM word_summary"))
+    return [(tag, ranks[seq], seq) for seq, seq_tags in tags.items() for tag in seq_tags]
+
+
+def kanji_readings(conn: sqlite3.Connection) -> list:
+    """One row per reading token; okurigana dots and affix hyphens stripped (た.べる -> たべる)."""
+    rows = []
+    for character, kun, on in conn.execute("SELECT character, readings_kun, readings_on FROM kanji"):
+        for token in f"{kun or ''} {on or ''}".split():
+            cleaned = token.replace(".", "").replace("-", "")
+            if cleaned:
+                rows.append((cleaned, character))
+    return rows
 
 
 def build_search_tables(conn: sqlite3.Connection) -> None:
@@ -40,6 +114,8 @@ def build_search_tables(conn: sqlite3.Connection) -> None:
         DROP TABLE IF EXISTS word_summary;
         DROP TABLE IF EXISTS jp_index;
         DROP TABLE IF EXISTS en_index;
+        DROP TABLE IF EXISTS tag_index;
+        DROP TABLE IF EXISTS kanji_reading;
 
         CREATE TABLE word_summary (
             sequence INTEGER PRIMARY KEY,
@@ -59,6 +135,25 @@ def build_search_tables(conn: sqlite3.Connection) -> None:
                END
         FROM words w
         JOIN senses p ON p.id = (SELECT min(id) FROM senses m WHERE m.sequence = w.sequence);
+
+        CREATE INDEX idx_summary_rank ON word_summary(rank);
+
+        CREATE TABLE tag_index (
+            tag TEXT NOT NULL,
+            rank INTEGER NOT NULL,
+            sequence INTEGER NOT NULL,
+            PRIMARY KEY (tag, rank, sequence)
+        ) WITHOUT ROWID;
+
+        CREATE TABLE kanji_reading (
+            reading TEXT NOT NULL,
+            character TEXT NOT NULL,
+            PRIMARY KEY (reading, character)
+        ) WITHOUT ROWID;
+
+        CREATE INDEX idx_kanji_grade ON kanji(grade, stroke_count);
+        CREATE INDEX idx_kanji_strokes ON kanji(stroke_count);
+        CREATE INDEX idx_kanji_jlpt ON kanji(jlpt_level, stroke_count);
 
         CREATE TABLE jp_index (
             key TEXT NOT NULL,
@@ -98,6 +193,8 @@ def build_search_tables(conn: sqlite3.Connection) -> None:
         for key in {term, to_hiragana(reading)}:
             rows.append((key, rank, sequence, term, reading, gloss, common))
     conn.executemany("INSERT OR IGNORE INTO jp_index VALUES (?, ?, ?, ?, ?, ?, ?)", rows)
+    conn.executemany("INSERT OR IGNORE INTO tag_index VALUES (?, ?, ?)", word_tags(conn))
+    conn.executemany("INSERT OR IGNORE INTO kanji_reading VALUES (?, ?)", kanji_readings(conn))
     conn.commit()
 
 

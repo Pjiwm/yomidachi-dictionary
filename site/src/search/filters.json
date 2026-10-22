@@ -1,0 +1,1254 @@
+{
+	"pos": [
+		{
+			"key": "verb",
+			"label": "verb",
+			"codes": [
+				"v1",
+				"v1-s",
+				"v5b",
+				"v5g",
+				"v5k",
+				"v5m",
+				"v5n",
+				"v5r",
+				"v5s",
+				"v5t",
+				"v5u",
+				"v5aru",
+				"v5k-s",
+				"v5u-s",
+				"v5r-i",
+				"vs",
+				"vs-s",
+				"vs-i",
+				"vs-c",
+				"vk",
+				"vz",
+				"vn",
+				"vr",
+				"v-unspec"
+			]
+		},
+		{
+			"key": "ichidan",
+			"label": "ichidan",
+			"codes": [
+				"v1",
+				"v1-s"
+			]
+		},
+		{
+			"key": "godan",
+			"label": "godan",
+			"codes": [
+				"v5b",
+				"v5g",
+				"v5k",
+				"v5m",
+				"v5n",
+				"v5r",
+				"v5s",
+				"v5t",
+				"v5u",
+				"v5aru",
+				"v5k-s",
+				"v5u-s",
+				"v5r-i"
+			]
+		},
+		{
+			"key": "suru",
+			"label": "suru",
+			"codes": [
+				"vs",
+				"vs-s",
+				"vs-i",
+				"vs-c"
+			]
+		},
+		{
+			"key": "kuru",
+			"label": "kuru",
+			"codes": [
+				"vk"
+			]
+		},
+		{
+			"key": "transitive",
+			"label": "transitive",
+			"codes": [
+				"vt"
+			]
+		},
+		{
+			"key": "intransitive",
+			"label": "intransitive",
+			"codes": [
+				"vi"
+			]
+		},
+		{
+			"key": "noun",
+			"label": "noun",
+			"codes": [
+				"n",
+				"n-adv",
+				"n-t",
+				"n-pref",
+				"n-suf"
+			]
+		},
+		{
+			"key": "proper_noun",
+			"label": "proper noun",
+			"codes": [
+				"n-pr"
+			]
+		},
+		{
+			"key": "i_adjective",
+			"label": "i-adjective",
+			"codes": [
+				"adj-i",
+				"adj-ix"
+			]
+		},
+		{
+			"key": "na_adjective",
+			"label": "na-adjective",
+			"codes": [
+				"adj-na"
+			]
+		},
+		{
+			"key": "adjective",
+			"label": "adjective",
+			"codes": [
+				"adj-i",
+				"adj-ix",
+				"adj-na",
+				"adj-no",
+				"adj-pn",
+				"adj-t",
+				"adj-f",
+				"adj-kari",
+				"adj-ku",
+				"adj-nari",
+				"adj-shiku"
+			]
+		},
+		{
+			"key": "adverb",
+			"label": "adverb",
+			"codes": [
+				"adv",
+				"adv-to"
+			]
+		},
+		{
+			"key": "expression",
+			"label": "expression",
+			"codes": [
+				"exp"
+			]
+		},
+		{
+			"key": "counter",
+			"label": "counter",
+			"codes": [
+				"ctr"
+			]
+		},
+		{
+			"key": "particle",
+			"label": "particle",
+			"codes": [
+				"prt"
+			]
+		},
+		{
+			"key": "suffix",
+			"label": "suffix",
+			"codes": [
+				"suf"
+			]
+		},
+		{
+			"key": "prefix",
+			"label": "prefix",
+			"codes": [
+				"pref"
+			]
+		},
+		{
+			"key": "pronoun",
+			"label": "pronoun",
+			"codes": [
+				"pn"
+			]
+		},
+		{
+			"key": "conjunction",
+			"label": "conjunction",
+			"codes": [
+				"conj"
+			]
+		},
+		{
+			"key": "interjection",
+			"label": "interjection",
+			"codes": [
+				"int"
+			]
+		},
+		{
+			"key": "auxiliary",
+			"label": "auxiliary",
+			"codes": [
+				"aux",
+				"aux-v",
+				"aux-adj"
+			]
+		},
+		{
+			"key": "numeric",
+			"label": "numeric",
+			"codes": [
+				"num"
+			]
+		},
+		{
+			"key": "copula",
+			"label": "copula",
+			"codes": [
+				"cop"
+			]
+		}
+	],
+	"is": [
+		{
+			"key": "common",
+			"label": "common",
+			"codes": []
+		},
+		{
+			"key": "kanji",
+			"label": "kanji only",
+			"codes": []
+		},
+		{
+			"key": "kana",
+			"label": "usually kana",
+			"codes": [
+				"uk"
+			]
+		},
+		{
+			"key": "archaic",
+			"label": "archaic",
+			"codes": [
+				"arch",
+				"dated",
+				"obs"
+			]
+		},
+		{
+			"key": "slang",
+			"label": "slang",
+			"codes": [
+				"sl",
+				"col"
+			]
+		},
+		{
+			"key": "formal",
+			"label": "formal",
+			"codes": [
+				"form",
+				"litf"
+			]
+		},
+		{
+			"key": "honorific",
+			"label": "honorific",
+			"codes": [
+				"hon"
+			]
+		},
+		{
+			"key": "humble",
+			"label": "humble",
+			"codes": [
+				"hum"
+			]
+		},
+		{
+			"key": "polite",
+			"label": "polite",
+			"codes": [
+				"pol"
+			]
+		},
+		{
+			"key": "vulgar",
+			"label": "vulgar",
+			"codes": [
+				"vulg",
+				"X"
+			]
+		},
+		{
+			"key": "dialect",
+			"label": "dialect",
+			"codes": [
+				"ksb",
+				"ktb",
+				"kyb",
+				"osb",
+				"kyu",
+				"thb",
+				"hob",
+				"tsb",
+				"tsug",
+				"nab",
+				"rkb",
+				"bra"
+			]
+		},
+		{
+			"key": "onomatopoeia",
+			"label": "onomatopoeia",
+			"codes": [
+				"on-mim"
+			]
+		},
+		{
+			"key": "idiomatic",
+			"label": "idiomatic",
+			"codes": [
+				"id"
+			]
+		},
+		{
+			"key": "abbreviation",
+			"label": "abbreviation",
+			"codes": [
+				"abbr"
+			]
+		},
+		{
+			"key": "rare",
+			"label": "rare",
+			"codes": [
+				"rare"
+			]
+		},
+		{
+			"key": "proverb",
+			"label": "proverb",
+			"codes": [
+				"proverb"
+			]
+		},
+		{
+			"key": "yojijukugo",
+			"label": "yojijukugo",
+			"codes": [
+				"yoji"
+			]
+		},
+		{
+			"key": "obsolete",
+			"label": "obsolete",
+			"codes": [
+				"obs"
+			]
+		}
+	],
+	"topic": [
+		{
+			"key": "agriculture",
+			"label": "agriculture",
+			"codes": [
+				"agric"
+			]
+		},
+		{
+			"key": "anatomy",
+			"label": "anatomy",
+			"codes": [
+				"anat"
+			]
+		},
+		{
+			"key": "archeology",
+			"label": "archeology",
+			"codes": [
+				"archeol"
+			]
+		},
+		{
+			"key": "architecture",
+			"label": "architecture",
+			"codes": [
+				"archit"
+			]
+		},
+		{
+			"key": "art",
+			"label": "art",
+			"codes": [
+				"art"
+			]
+		},
+		{
+			"key": "astronomy",
+			"label": "astronomy",
+			"codes": [
+				"astron"
+			]
+		},
+		{
+			"key": "audiovisual",
+			"label": "audiovisual",
+			"codes": [
+				"audvid"
+			]
+		},
+		{
+			"key": "aviation",
+			"label": "aviation",
+			"codes": [
+				"aviat"
+			]
+		},
+		{
+			"key": "baseball",
+			"label": "baseball",
+			"codes": [
+				"baseb"
+			]
+		},
+		{
+			"key": "biochemistry",
+			"label": "biochemistry",
+			"codes": [
+				"biochem"
+			]
+		},
+		{
+			"key": "biology",
+			"label": "biology",
+			"codes": [
+				"biol"
+			]
+		},
+		{
+			"key": "botany",
+			"label": "botany",
+			"codes": [
+				"bot"
+			]
+		},
+		{
+			"key": "boxing",
+			"label": "boxing",
+			"codes": [
+				"boxing"
+			]
+		},
+		{
+			"key": "buddhism",
+			"label": "buddhism",
+			"codes": [
+				"Buddh"
+			]
+		},
+		{
+			"key": "business",
+			"label": "business",
+			"codes": [
+				"bus"
+			]
+		},
+		{
+			"key": "card_games",
+			"label": "card games",
+			"codes": [
+				"cards"
+			]
+		},
+		{
+			"key": "chemistry",
+			"label": "chemistry",
+			"codes": [
+				"chem"
+			]
+		},
+		{
+			"key": "chinese_mythology",
+			"label": "chinese mythology",
+			"codes": [
+				"chmyth"
+			]
+		},
+		{
+			"key": "christianity",
+			"label": "christianity",
+			"codes": [
+				"Christn"
+			]
+		},
+		{
+			"key": "civil_engineering",
+			"label": "civil engineering",
+			"codes": [
+				"civeng"
+			]
+		},
+		{
+			"key": "clothing",
+			"label": "clothing",
+			"codes": [
+				"cloth"
+			]
+		},
+		{
+			"key": "computing",
+			"label": "computing",
+			"codes": [
+				"comp"
+			]
+		},
+		{
+			"key": "crystallography",
+			"label": "crystallography",
+			"codes": [
+				"cryst"
+			]
+		},
+		{
+			"key": "dentistry",
+			"label": "dentistry",
+			"codes": [
+				"dent"
+			]
+		},
+		{
+			"key": "ecology",
+			"label": "ecology",
+			"codes": [
+				"ecol"
+			]
+		},
+		{
+			"key": "economics",
+			"label": "economics",
+			"codes": [
+				"econ"
+			]
+		},
+		{
+			"key": "electricity",
+			"label": "electricity",
+			"codes": [
+				"elec"
+			]
+		},
+		{
+			"key": "electronics",
+			"label": "electronics",
+			"codes": [
+				"electr"
+			]
+		},
+		{
+			"key": "entomology",
+			"label": "entomology",
+			"codes": [
+				"ent"
+			]
+		},
+		{
+			"key": "figure_skating",
+			"label": "figure skating",
+			"codes": [
+				"figskt"
+			]
+		},
+		{
+			"key": "film",
+			"label": "film",
+			"codes": [
+				"film"
+			]
+		},
+		{
+			"key": "finance",
+			"label": "finance",
+			"codes": [
+				"finc"
+			]
+		},
+		{
+			"key": "fishing",
+			"label": "fishing",
+			"codes": [
+				"fish"
+			]
+		},
+		{
+			"key": "food",
+			"label": "food",
+			"codes": [
+				"food"
+			]
+		},
+		{
+			"key": "gardening",
+			"label": "gardening",
+			"codes": [
+				"gardn"
+			]
+		},
+		{
+			"key": "genetics",
+			"label": "genetics",
+			"codes": [
+				"genet"
+			]
+		},
+		{
+			"key": "geography",
+			"label": "geography",
+			"codes": [
+				"geogr"
+			]
+		},
+		{
+			"key": "geology",
+			"label": "geology",
+			"codes": [
+				"geol"
+			]
+		},
+		{
+			"key": "geometry",
+			"label": "geometry",
+			"codes": [
+				"geom"
+			]
+		},
+		{
+			"key": "go",
+			"label": "go",
+			"codes": [
+				"go"
+			]
+		},
+		{
+			"key": "golf",
+			"label": "golf",
+			"codes": [
+				"golf"
+			]
+		},
+		{
+			"key": "grammar",
+			"label": "grammar",
+			"codes": [
+				"gramm"
+			]
+		},
+		{
+			"key": "greek_mythology",
+			"label": "greek mythology",
+			"codes": [
+				"grmyth"
+			]
+		},
+		{
+			"key": "hanafuda",
+			"label": "hanafuda",
+			"codes": [
+				"hanaf"
+			]
+		},
+		{
+			"key": "horse_racing",
+			"label": "horse racing",
+			"codes": [
+				"horse"
+			]
+		},
+		{
+			"key": "internet",
+			"label": "internet",
+			"codes": [
+				"internet"
+			]
+		},
+		{
+			"key": "japanese_mythology",
+			"label": "japanese mythology",
+			"codes": [
+				"jpmyth"
+			]
+		},
+		{
+			"key": "kabuki",
+			"label": "kabuki",
+			"codes": [
+				"kabuki"
+			]
+		},
+		{
+			"key": "law",
+			"label": "law",
+			"codes": [
+				"law"
+			]
+		},
+		{
+			"key": "linguistics",
+			"label": "linguistics",
+			"codes": [
+				"ling"
+			]
+		},
+		{
+			"key": "logic",
+			"label": "logic",
+			"codes": [
+				"logic"
+			]
+		},
+		{
+			"key": "martial_arts",
+			"label": "martial arts",
+			"codes": [
+				"MA"
+			]
+		},
+		{
+			"key": "mahjong",
+			"label": "mahjong",
+			"codes": [
+				"mahj"
+			]
+		},
+		{
+			"key": "manga",
+			"label": "manga",
+			"codes": [
+				"manga"
+			]
+		},
+		{
+			"key": "mathematics",
+			"label": "mathematics",
+			"codes": [
+				"math"
+			]
+		},
+		{
+			"key": "mechanical_engineering",
+			"label": "mechanical engineering",
+			"codes": [
+				"mech"
+			]
+		},
+		{
+			"key": "medicine",
+			"label": "medicine",
+			"codes": [
+				"med"
+			]
+		},
+		{
+			"key": "meteorology",
+			"label": "meteorology",
+			"codes": [
+				"met"
+			]
+		},
+		{
+			"key": "military",
+			"label": "military",
+			"codes": [
+				"mil"
+			]
+		},
+		{
+			"key": "mineralogy",
+			"label": "mineralogy",
+			"codes": [
+				"min"
+			]
+		},
+		{
+			"key": "mining",
+			"label": "mining",
+			"codes": [
+				"mining"
+			]
+		},
+		{
+			"key": "motorsport",
+			"label": "motorsport",
+			"codes": [
+				"motor"
+			]
+		},
+		{
+			"key": "music",
+			"label": "music",
+			"codes": [
+				"music"
+			]
+		},
+		{
+			"key": "noh",
+			"label": "noh",
+			"codes": [
+				"noh"
+			]
+		},
+		{
+			"key": "ornithology",
+			"label": "ornithology",
+			"codes": [
+				"ornith"
+			]
+		},
+		{
+			"key": "paleontology",
+			"label": "paleontology",
+			"codes": [
+				"paleo"
+			]
+		},
+		{
+			"key": "pathology",
+			"label": "pathology",
+			"codes": [
+				"pathol"
+			]
+		},
+		{
+			"key": "pharmacology",
+			"label": "pharmacology",
+			"codes": [
+				"pharm"
+			]
+		},
+		{
+			"key": "philosophy",
+			"label": "philosophy",
+			"codes": [
+				"phil"
+			]
+		},
+		{
+			"key": "photography",
+			"label": "photography",
+			"codes": [
+				"photo"
+			]
+		},
+		{
+			"key": "physics",
+			"label": "physics",
+			"codes": [
+				"physics"
+			]
+		},
+		{
+			"key": "physiology",
+			"label": "physiology",
+			"codes": [
+				"physiol"
+			]
+		},
+		{
+			"key": "politics",
+			"label": "politics",
+			"codes": [
+				"politics"
+			]
+		},
+		{
+			"key": "printing",
+			"label": "printing",
+			"codes": [
+				"print"
+			]
+		},
+		{
+			"key": "professional_wrestling",
+			"label": "professional wrestling",
+			"codes": [
+				"prowres"
+			]
+		},
+		{
+			"key": "psychiatry",
+			"label": "psychiatry",
+			"codes": [
+				"psy"
+			]
+		},
+		{
+			"key": "psychology",
+			"label": "psychology",
+			"codes": [
+				"psych"
+			]
+		},
+		{
+			"key": "railway",
+			"label": "railway",
+			"codes": [
+				"rail"
+			]
+		},
+		{
+			"key": "roman_mythology",
+			"label": "roman mythology",
+			"codes": [
+				"rommyth"
+			]
+		},
+		{
+			"key": "shinto",
+			"label": "shinto",
+			"codes": [
+				"Shinto"
+			]
+		},
+		{
+			"key": "shogi",
+			"label": "shogi",
+			"codes": [
+				"shogi"
+			]
+		},
+		{
+			"key": "skiing",
+			"label": "skiing",
+			"codes": [
+				"ski"
+			]
+		},
+		{
+			"key": "sports",
+			"label": "sports",
+			"codes": [
+				"sports"
+			]
+		},
+		{
+			"key": "statistics",
+			"label": "statistics",
+			"codes": [
+				"stat"
+			]
+		},
+		{
+			"key": "stock_market",
+			"label": "stock market",
+			"codes": [
+				"stockm"
+			]
+		},
+		{
+			"key": "sumo",
+			"label": "sumo",
+			"codes": [
+				"sumo"
+			]
+		},
+		{
+			"key": "surgery",
+			"label": "surgery",
+			"codes": [
+				"surg"
+			]
+		},
+		{
+			"key": "telecommunications",
+			"label": "telecommunications",
+			"codes": [
+				"telec"
+			]
+		},
+		{
+			"key": "television",
+			"label": "television",
+			"codes": [
+				"tv"
+			]
+		},
+		{
+			"key": "veterinary",
+			"label": "veterinary",
+			"codes": [
+				"vet"
+			]
+		},
+		{
+			"key": "video_games",
+			"label": "video games",
+			"codes": [
+				"vidg"
+			]
+		},
+		{
+			"key": "zoology",
+			"label": "zoology",
+			"codes": [
+				"zool"
+			]
+		}
+	],
+	"dialect": [
+		{
+			"key": "kansai",
+			"label": "kansai",
+			"codes": [
+				"ksb"
+			]
+		},
+		{
+			"key": "kantou",
+			"label": "kantou",
+			"codes": [
+				"ktb"
+			]
+		},
+		{
+			"key": "kyoto",
+			"label": "kyoto",
+			"codes": [
+				"kyb"
+			]
+		},
+		{
+			"key": "osaka",
+			"label": "osaka",
+			"codes": [
+				"osb"
+			]
+		},
+		{
+			"key": "kyuushuu",
+			"label": "kyuushuu",
+			"codes": [
+				"kyu"
+			]
+		},
+		{
+			"key": "touhoku",
+			"label": "touhoku",
+			"codes": [
+				"thb"
+			]
+		},
+		{
+			"key": "hokkaido",
+			"label": "hokkaido",
+			"codes": [
+				"hob"
+			]
+		},
+		{
+			"key": "tosa",
+			"label": "tosa",
+			"codes": [
+				"tsb"
+			]
+		},
+		{
+			"key": "tsugaru",
+			"label": "tsugaru",
+			"codes": [
+				"tsug"
+			]
+		},
+		{
+			"key": "nagano",
+			"label": "nagano",
+			"codes": [
+				"nab"
+			]
+		},
+		{
+			"key": "ryuukyuu",
+			"label": "ryuukyuu",
+			"codes": [
+				"rkb"
+			]
+		},
+		{
+			"key": "brazilian",
+			"label": "brazilian",
+			"codes": [
+				"bra"
+			]
+		}
+	],
+	"jlpt": [
+		{
+			"key": "n5",
+			"label": "N5",
+			"codes": [
+				"5"
+			]
+		},
+		{
+			"key": "n4",
+			"label": "N4",
+			"codes": [
+				"4"
+			]
+		},
+		{
+			"key": "n3",
+			"label": "N3",
+			"codes": [
+				"3"
+			]
+		},
+		{
+			"key": "n2",
+			"label": "N2",
+			"codes": [
+				"2"
+			]
+		},
+		{
+			"key": "n1",
+			"label": "N1",
+			"codes": [
+				"1"
+			]
+		}
+	],
+	"pitch": [
+		{
+			"key": "heiban",
+			"label": "heiban",
+			"codes": [
+				"heiban"
+			]
+		},
+		{
+			"key": "atamadaka",
+			"label": "atamadaka",
+			"codes": [
+				"atamadaka"
+			]
+		},
+		{
+			"key": "nakadaka",
+			"label": "nakadaka",
+			"codes": [
+				"nakadaka"
+			]
+		},
+		{
+			"key": "odaka",
+			"label": "odaka",
+			"codes": [
+				"odaka"
+			]
+		}
+	],
+	"grade": [
+		{
+			"key": "joyo",
+			"label": "Jōyō",
+			"codes": [
+				"1",
+				"2",
+				"3",
+				"4",
+				"5",
+				"6",
+				"8"
+			]
+		},
+		{
+			"key": "jinmeiyo",
+			"label": "Jinmeiyō",
+			"codes": [
+				"9",
+				"10"
+			]
+		},
+		{
+			"key": "grade_1",
+			"label": "Grade 1",
+			"codes": [
+				"1"
+			]
+		},
+		{
+			"key": "grade_2",
+			"label": "Grade 2",
+			"codes": [
+				"2"
+			]
+		},
+		{
+			"key": "grade_3",
+			"label": "Grade 3",
+			"codes": [
+				"3"
+			]
+		},
+		{
+			"key": "grade_4",
+			"label": "Grade 4",
+			"codes": [
+				"4"
+			]
+		},
+		{
+			"key": "grade_5",
+			"label": "Grade 5",
+			"codes": [
+				"5"
+			]
+		},
+		{
+			"key": "grade_6",
+			"label": "Grade 6",
+			"codes": [
+				"6"
+			]
+		},
+		{
+			"key": "grade_8",
+			"label": "Grade 8",
+			"codes": [
+				"8"
+			]
+		},
+		{
+			"key": "grade_9",
+			"label": "Grade 9",
+			"codes": [
+				"9"
+			]
+		},
+		{
+			"key": "grade_10",
+			"label": "Grade 10",
+			"codes": [
+				"10"
+			]
+		}
+	]
+}

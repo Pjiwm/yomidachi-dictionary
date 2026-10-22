@@ -1,5 +1,4 @@
 import type { DictRepository } from "../db/repository.ts";
-import { hasKana, hasKanji } from "../search/kana.ts";
 import { hasWildcard, parseQuery } from "../search/query.ts";
 import { resolveFilter, type ResolvedFilter } from "../search/filters.ts";
 import type { Route } from "./router.ts";
@@ -8,7 +7,6 @@ import type { Store } from "./state.ts";
 import type { SearchResults } from "../types.ts";
 
 const RESULT_LIMIT = 50;
-const KANJI_LIMIT = 60;
 
 /* Translates route changes into repository calls and store updates. A
    search or detail load that finishes after a newer one started is dropped. */
@@ -70,17 +68,11 @@ export class Actions {
 		} else {
 			const [words, kanji] = await Promise.all([
 				kanjiOnly ? Promise.resolve([]) : this.repository.search(text, RESULT_LIMIT),
-				this.kanjiFor(text),
+				this.repository.kanjiForText(text),
 			]);
 			results = { words, kanji };
 		}
 		return kanjiOnly ? { words: [], kanji: results.kanji } : results;
-	}
-
-	private kanjiFor(text: string) {
-		if (hasKanji(text)) return this.repository.kanjiForWord(text);
-		if (hasKana(text)) return this.repository.kanjiByReading(text, KANJI_LIMIT);
-		return Promise.resolve([]);
 	}
 
 	private async loadWord(sequence: number): Promise<void> {

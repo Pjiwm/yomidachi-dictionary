@@ -26,6 +26,7 @@ site/src/state/state.ts                  AppState, update(), subscribe
 site/src/state/router.ts                 hash <-> Route
 site/src/ui/*.ts                         one render function per view
 site/src/main.ts                         wiring
+site/src/search/filters.json             filter tables, shared with the prepare script
 site/public/db/                          gitignored chunked database for local dev
 .github/workflows/pages.yml              build + deploy
 LICENSE, README.md                       brand exception, site section, attribution
@@ -59,4 +60,7 @@ LICENSE, README.md                       brand exception, site section, attribut
     other attributions, LICENSE brand paragraph, README site section.
 11. **Pages workflow.** `.github/workflows/pages.yml` drafted for review; Pim
     owns the CI change, enables Pages in repo settings, triggers the first run.
-12. **Final independent review** of the whole branch.
+12. **PWA.** Web app manifest with Pim's dictionary logos, service worker
+    that caches the app shell (not the database chunks), install prompt
+    left to the browser.
+13. **Final independent review** of the whole branch.

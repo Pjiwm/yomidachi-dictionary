@@ -1,6 +1,7 @@
 import type { DbWorker } from "./worker.ts";
 import type { ResolvedFilter } from "../search/filters.ts";
-import { isJapanese, kanjiIn, toHiragana, toKatakana } from "../search/kana.ts";
+import { hasKana, hasKanji, isJapanese, kanjiIn, toHiragana, toKatakana } from "../search/kana.ts";
+import { hasWildcard } from "../search/query.ts";
 import type {
 	DictEntry,
 	KanjiEntry,
@@ -12,6 +13,8 @@ import type {
 
 /* Beyond any code point, so `col >= p AND col < p + END` is a prefix range. */
 const PREFIX_END = "\u{10FFFF}";
+const KANJI_LIMIT = 60;
+const KANJI_PANEL_LIMIT = 100;
 
 const ENTRY_SELECT = `
 	SELECT s.id, s.sequence, s.term, s.reading, s.pos, s.frequency, s.translation,
@@ -24,6 +27,32 @@ const RANK_ORDER = "w.freq_rank IS NULL, w.freq_rank, s.frequency DESC";
 const KANJI_SELECT = `
 	SELECT character, stroke_count, grade, jlpt_level, meanings, readings_on, readings_kun
 	FROM kanji`;
+
+const SUMMARY_SELECT = "SELECT ws.sequence, ws.term, ws.reading, ws.gloss, ws.common FROM top JOIN word_summary ws ON ws.sequence = top.sequence";
+
+function placeholders(n: number): string {
+	return Array.from({ length: n }, () => "?").join(", ");
+}
+
+/* Wildcards to GLOB syntax; "[" would otherwise start a character class. */
+function toGlobPattern(text: string): string {
+	return text.replace(/\[/g, "[[]").replace(/[＊]/g, "*").replace(/[？]/g, "?");
+}
+
+/* The literal run before the first wildcard, which bounds the index range. */
+function literalPrefix(text: string): string {
+	return text.split(/[*?＊？]/)[0];
+}
+
+interface Candidates {
+	sql: string;
+	params: unknown[];
+	/* Columns of the candidate rows that decide the final order. */
+	order: string[];
+	/* One row per word already, so no GROUP BY and the LIMIT can stop early. */
+	unique: boolean;
+}
+
 
 interface EntryRow {
 	id: number;
@@ -176,12 +205,152 @@ export class DictRepository {
 		return rows.map(toSummary);
 	}
 
-	async advancedSearch(
-		_text: string,
-		_filters: ResolvedFilter[],
-		_limit: number,
-	): Promise<SearchResults> {
-		return { words: [], kanji: [] };
+	/* Filters become EXISTS lookups against tag_index (tag, rank, sequence),
+	   one per filter group, so each candidate costs one point read per
+	   group. Candidates come from the text hit set, or without text from the
+	   narrowest positive filter's tag range, or last from word_summary by rank. */
+	async advancedSearch(text: string, filters: ResolvedFilter[], limit: number): Promise<SearchResults> {
+		const kanjiFilters = filters.filter((f) => f.kind === "kanji");
+		const [words, kanji] = await Promise.all([
+			this.filteredWords(text, filters, limit),
+			kanjiFilters.length ? this.filteredKanji(text, kanjiFilters) : this.kanjiForText(text),
+		]);
+		return { words, kanji };
+	}
+
+	private async filteredWords(text: string, filters: ResolvedFilter[], limit: number): Promise<WordSummary[]> {
+		const groups = new Map<string, ResolvedFilter[]>();
+		for (const f of filters) groups.set(f.prefix, [...(groups.get(f.prefix) ?? []), f]);
+
+		let driver: string | null = null;
+		let candidates: Candidates | null;
+		if (text) {
+			candidates = this.textCandidates(text);
+			if (!candidates) return [];
+		} else {
+			const positive = [...groups.values()]
+				.map((g) => g.filter((f) => !f.negated))
+				.filter((g) => g.length)
+				.sort((a, b) => a.flatMap((f) => f.tags).length - b.flatMap((f) => f.tags).length)[0];
+			if (positive) {
+				driver = positive[0].prefix;
+				const tags = positive.flatMap((f) => f.tags);
+				candidates = {
+					sql: `SELECT sequence, rank FROM tag_index WHERE tag IN (${placeholders(tags.length)})`,
+					params: tags,
+					order: ["rank"],
+					unique: tags.length === 1,
+				};
+			} else {
+				candidates = { sql: "SELECT sequence, rank FROM word_summary", params: [], order: ["rank"], unique: true };
+			}
+		}
+
+		const clauses: string[] = [];
+		const params: unknown[] = [...candidates.params];
+		for (const [prefix, group] of groups) {
+			const positive = prefix === driver ? [] : group.filter((f) => !f.negated).flatMap((f) => f.tags);
+			const negative = group.filter((f) => f.negated).flatMap((f) => f.tags);
+			for (const [tags, keyword] of [[positive, "EXISTS"], [negative, "NOT EXISTS"]] as const) {
+				if (!tags.length) continue;
+				clauses.push(`${keyword} (SELECT 1 FROM tag_index t WHERE t.tag IN (${placeholders(tags.length)}) AND t.rank = c.rank AND t.sequence = c.sequence)`);
+				params.push(...tags);
+			}
+		}
+		const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
+		const orderCols = candidates.order.map((col) => (candidates.unique ? `c.${col}` : `min(c.${col}) AS ${col}`)).join(", ");
+		const groupBy = candidates.unique ? "" : "GROUP BY c.sequence";
+		const orderBy = candidates.order.join(", ");
+		const rows = await this.query<SummaryRow>(
+			`WITH top AS (SELECT c.sequence, ${orderCols} FROM (${candidates.sql}) c ${where} ${groupBy} ORDER BY ${orderBy} LIMIT ?)
+			 ${SUMMARY_SELECT} ORDER BY ${candidates.order.map((col) => `top.${col}`).join(", ")}`,
+			...params,
+			limit,
+		);
+		return rows.map(toSummary);
+	}
+
+	/* The hit set for free text, or null when a wildcard leaves no literal
+	   prefix to bound the index with (a leading wildcard would scan everything). */
+	private textCandidates(text: string): Candidates | null {
+		if (isJapanese(text)) {
+			const hira = toHiragana(text);
+			const kata = toKatakana(text);
+			if (!hasWildcard(text)) {
+				return {
+					sql: `SELECT sequence, rank, key <> ? AND key <> ? AS inexact FROM jp_index
+					      WHERE (key >= ? AND key < ?) OR (key >= ? AND key < ?)`,
+					params: [hira, kata, hira, hira + PREFIX_END, kata, kata + PREFIX_END],
+					order: ["inexact", "rank"],
+					unique: false,
+				};
+			}
+			const prefixes = [literalPrefix(hira), literalPrefix(kata)];
+			if (!prefixes[0]) return null;
+			return {
+				sql: `SELECT sequence, rank FROM jp_index WHERE key >= ? AND key < ? AND key GLOB ?
+				      UNION ALL SELECT sequence, rank FROM jp_index WHERE key >= ? AND key < ? AND key GLOB ?`,
+				params: [prefixes[0], prefixes[0] + PREFIX_END, toGlobPattern(hira), prefixes[1], prefixes[1] + PREFIX_END, toGlobPattern(kata)],
+				order: ["rank"],
+				unique: false,
+			};
+		}
+		const q = text.toLowerCase().replace(/[%_]/g, "");
+		if (hasWildcard(q)) {
+			if (!literalPrefix(q)) return null;
+			return {
+				sql: "SELECT sequence, sense_rank, position, rank FROM en_index WHERE gloss LIKE ?",
+				params: [q.replace(/[*＊]/g, "%").replace(/[?？]/g, "_")],
+				order: ["sense_rank", "position", "rank"],
+				unique: false,
+			};
+		}
+		return {
+			sql: `SELECT sequence, sense_rank, 0 AS match_type, position, rank FROM en_index WHERE gloss = ? COLLATE NOCASE
+			      UNION ALL SELECT sequence, sense_rank, 0, position, rank FROM en_index WHERE gloss = ? COLLATE NOCASE
+			      UNION ALL SELECT sequence, sense_rank, gloss NOT LIKE ?, position, rank FROM en_index WHERE gloss LIKE ?
+			      UNION ALL SELECT sequence, sense_rank, gloss NOT LIKE ?, position, rank FROM en_index WHERE gloss LIKE ?`,
+			params: [q, `to ${q}`, `${q} (%`, `${q} %`, `to ${q} (%`, `to ${q} %`],
+			order: ["sense_rank", "match_type", "position", "rank"],
+			unique: false,
+		};
+	}
+
+	/* Kanji matching the grade, strokes and jlpt filters, narrowed to the text. */
+	private async filteredKanji(text: string, filters: ResolvedFilter[]): Promise<KanjiEntry[]> {
+		const column: Record<string, string> = { grade: "grade", strokes: "stroke_count", jlpt: "jlpt_level" };
+		const clauses: string[] = [];
+		const params: unknown[] = [];
+		for (const f of filters) {
+			const col = column[f.prefix];
+			const values = f.codes.map(Number);
+			clauses.push(f.negated ? `(${col} IS NULL OR ${col} NOT IN (${placeholders(values.length)}))` : `${col} IN (${placeholders(values.length)})`);
+			params.push(...values);
+		}
+		if (hasKanji(text)) {
+			const chars = kanjiIn(text);
+			clauses.push(`character IN (${placeholders(chars.length)})`);
+			params.push(...chars);
+		} else if (hasKana(text)) {
+			clauses.push("character IN (SELECT character FROM kanji_reading WHERE reading IN (?, ?))");
+			params.push(toHiragana(text), toKatakana(text));
+		} else if (text) {
+			clauses.push("meanings LIKE ?");
+			params.push(`%${text.toLowerCase()}%`);
+		}
+		const rows = await this.query<KanjiRow>(
+			`${KANJI_SELECT} WHERE ${clauses.join(" AND ")} ORDER BY stroke_count, character LIMIT ?`,
+			...params,
+			KANJI_PANEL_LIMIT,
+		);
+		return rows.map(toKanji);
+	}
+
+	/* The kanji panel for a plain search: the characters typed, or kanji read as the kana typed. */
+	async kanjiForText(text: string): Promise<KanjiEntry[]> {
+		if (hasKanji(text)) return this.kanjiForWord(text);
+		if (hasKana(text)) return this.kanjiByReading(text, KANJI_LIMIT);
+		return [];
 	}
 
 	/* Every sense of a word, with its translation rebuilt from the glosses
@@ -236,8 +405,24 @@ export class DictRepository {
 		return rows.length ? toKanji(rows[0]) : null;
 	}
 
-	async kanjiByReading(_reading: string, _limit: number): Promise<KanjiEntry[]> {
-		return [];
+	/* Prefix match on reading tokens in either script, via kanji_reading. */
+	async kanjiByReading(reading: string, limit: number): Promise<KanjiEntry[]> {
+		const hira = toHiragana(reading);
+		const kata = toKatakana(reading);
+		const rows = await this.query<KanjiRow>(
+			`WITH matched AS MATERIALIZED (
+			   SELECT character FROM kanji_reading WHERE reading >= ? AND reading < ?
+			   UNION SELECT character FROM kanji_reading WHERE reading >= ? AND reading < ?
+			 )
+			 ${KANJI_SELECT} WHERE character IN (SELECT character FROM matched)
+			 ORDER BY stroke_count, character LIMIT ?`,
+			hira,
+			hira + PREFIX_END,
+			kata,
+			kata + PREFIX_END,
+			limit,
+		);
+		return rows.map(toKanji);
 	}
 
 	async kanjiByRadicals(_radicals: string[]): Promise<RadicalSearchResult> {
