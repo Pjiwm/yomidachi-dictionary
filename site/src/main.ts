@@ -1,5 +1,6 @@
 import { DictRepository } from "./db/repository.ts";
 import { openDatabase } from "./db/worker.ts";
+import { Actions } from "./state/actions.ts";
 import { Store } from "./state/state.ts";
 import { renderLayout } from "./ui/Layout.ts";
 
@@ -7,12 +8,17 @@ const root = document.getElementById("app");
 if (!root) throw new Error("missing #app");
 
 const store = new Store();
-store.subscribe((state) => root.replaceChildren(renderLayout(state)));
+let actions: Actions | null = null;
+
+store.subscribe((state) => root.replaceChildren(renderLayout(state, actions)));
 store.update({});
 
 openDatabase()
 	.then((db) => {
 		const repository = new DictRepository(db);
+		actions = new Actions(store, repository);
+		window.addEventListener("hashchange", () => void actions?.onRoute(location.hash));
+		void actions.onRoute(location.hash);
 		if (import.meta.env.DEV) {
 			Object.assign(window, { dict: repository, stats: () => db.worker.getStats() });
 		}

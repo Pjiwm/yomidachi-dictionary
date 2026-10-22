@@ -1,8 +1,23 @@
 import type { Route } from "./router.ts";
-import type { DictEntry, KanjiEntry, SearchResults } from "../types.ts";
+import type { DictEntry, KanjiEntry, Radical, SearchResults } from "../types.ts";
 
-export interface Detail {
+export interface WordDetail {
+	kind: "word";
 	senses: DictEntry[];
+	kanji: KanjiEntry[];
+}
+
+export interface KanjiDetail {
+	kind: "kanji";
+	entry: KanjiEntry;
+}
+
+export type Detail = WordDetail | KanjiDetail | { kind: "missing" };
+
+export interface RadicalPicker {
+	radicals: Radical[];
+	selected: string[];
+	available: string[];
 	kanji: KanjiEntry[];
 }
 
@@ -10,9 +25,11 @@ export interface AppState {
 	route: Route;
 	query: string;
 	results: SearchResults | null;
-	loading: boolean;
-	detail: Detail | KanjiEntry | null;
-	radicalPicker: { selected: string[] } | null;
+	searching: boolean;
+	kanjiExpanded: boolean;
+	detail: Detail | null;
+	detailLoading: boolean;
+	radicalPicker: RadicalPicker | null;
 	error: string | null;
 }
 
@@ -20,8 +37,10 @@ export const initialState: AppState = {
 	route: { kind: "home" },
 	query: "",
 	results: null,
-	loading: false,
+	searching: false,
+	kanjiExpanded: false,
 	detail: null,
+	detailLoading: false,
 	radicalPicker: null,
 	error: null,
 };
