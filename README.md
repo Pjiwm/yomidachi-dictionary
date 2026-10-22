@@ -5,8 +5,8 @@ CLI tool for building Japanese dictionary SQLite databases from JMdict/KANJIDIC 
 ## Setup
 
 ```bash
-git clone https://github.com/Pjiwm/vocabulizer-dictionary-cli.git
-cd vocabulizer-dictionary-cli
+git clone https://github.com/Pjiwm/yomidachi-dictionary.git
+cd yomidachi-dictionary
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt

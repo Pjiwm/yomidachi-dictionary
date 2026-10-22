@@ -26,7 +26,7 @@ export function renderFooter(_state: AppState, _actions: Actions | null): HTMLEl
 			]),
 			el("p", {}, [
 				"The database is a derivative work under CC BY-SA. Site source on ",
-				link("GitHub", "https://github.com/Pjiwm/vocabulizer-dictionary-cli"),
+				link("GitHub", "https://github.com/Pjiwm/yomidachi-dictionary"),
 				", MIT licensed. The Yomidachi name is not covered by that license.",
 			]),
 		]),

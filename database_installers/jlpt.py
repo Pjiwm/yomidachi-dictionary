@@ -73,7 +73,7 @@ def populate_word_jlpt(cursor, conn):
 
     for level in [5, 4, 3, 2, 1]:
         url = JLPT_CSV_URLS[level]
-        response = requests.get(url)
+        response = requests.get(url, timeout=(10, 60))
         response.raise_for_status()
 
         reader = csv.DictReader(io.StringIO(response.text))
@@ -109,7 +109,7 @@ def populate_word_jlpt(cursor, conn):
 def populate_kanji_jlpt(cursor, conn):
     """Download the N5-N1 kanji list and set jlpt_level on the kanji table."""
     print("  Downloading JLPT kanji list...")
-    response = requests.get(KANJI_JLPT_URL)
+    response = requests.get(KANJI_JLPT_URL, timeout=(10, 60))
     response.raise_for_status()
 
     levels = {

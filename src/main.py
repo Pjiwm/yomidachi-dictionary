@@ -114,12 +114,14 @@ def build_dictionary(dictionary):
     radkfile.extract_and_populate(radkfile_file, str(EXTRACT_DIR / "radkfile"), cursor, conn)
 
     print("  Building kanji_word_map...")
-    cursor.execute("""
-        INSERT OR IGNORE INTO kanji_word_map (character, sequence)
-        SELECT DISTINCT k.character, s.sequence
-        FROM kanji k
-        INNER JOIN senses s ON INSTR(s.term, k.character) > 0
-    """)
+    known_kanji = {row[0] for row in cursor.execute("SELECT character FROM kanji")}
+    pairs = {
+        (char, sequence)
+        for sequence, term in cursor.execute("SELECT sequence, term FROM senses")
+        for char in term
+        if char in known_kanji
+    }
+    cursor.executemany("INSERT OR IGNORE INTO kanji_word_map (character, sequence) VALUES (?, ?)", pairs)
     conn.commit()
     cursor.execute("SELECT COUNT(*) FROM kanji_word_map")
     print(f"  kanji_word_map: {cursor.fetchone()[0]} entries")

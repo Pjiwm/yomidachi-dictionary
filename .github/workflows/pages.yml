@@ -5,12 +5,9 @@ on:
   workflow_dispatch:
     inputs:
       base:
-        description: "URL path the site is served from"
-        type: choice
-        default: "/vocabulizer-dictionary-cli/"
-        options:
-          - "/vocabulizer-dictionary-cli/"
-          - "/"
+        description: "URL path the site is served from; empty = /<repository name>/, use / for a custom domain"
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -67,7 +64,7 @@ jobs:
         working-directory: site
         env:
           # Set the PAGES_BASE repository variable to "/" once a custom domain is attached.
-          VITE_BASE: ${{ inputs.base || vars.PAGES_BASE || '/vocabulizer-dictionary-cli/' }}
+          VITE_BASE: ${{ inputs.base || vars.PAGES_BASE || format('/{0}/', github.event.repository.name) }}
         run: |
           npm ci
           npm test
