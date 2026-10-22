@@ -16,13 +16,13 @@ export function renderSearchBar(state: AppState, actions: Actions | null, size: 
 		autocapitalize: "off",
 		spellcheck: "false",
 		"aria-label": "Search the dictionary",
-		class: size === "large" ? "search-input text-lg pl-12 pr-24 py-3" : "search-input text-base pl-10 pr-20 py-2",
+		class: size === "large" ? "search-input text-lg pl-4 pr-36 py-3" : "search-input text-base pl-4 pr-32 py-2",
 	});
 	if (size === "large" && matchMedia("(hover: hover)").matches) input.autofocus = true;
 
 	const radicals = button(
 		{
-			class: `absolute inset-y-0 right-0 flex items-center justify-center min-w-11 text-muted hover:text-primary transition-colors ${state.radicalPicker ? "text-accent" : ""}`,
+			class: `absolute inset-y-0 right-11 flex items-center justify-center min-w-11 text-muted hover:text-primary transition-colors ${state.radicalPicker ? "text-accent" : ""}`,
 			"aria-label": "Find kanji by radical",
 			title: "Find kanji by radical",
 			"aria-expanded": String(Boolean(state.radicalPicker)),
@@ -31,7 +31,7 @@ export function renderSearchBar(state: AppState, actions: Actions | null, size: 
 		() => (state.radicalPicker ? actions?.closeRadicalPicker() : void actions?.openRadicalPicker()),
 	);
 	const clear = button(
-		{ class: "absolute inset-y-0 right-11 flex items-center justify-center min-w-10 text-muted hover:text-primary transition-colors", "aria-label": "Clear search" },
+		{ class: "absolute inset-y-0 right-22 flex items-center justify-center min-w-10 text-muted hover:text-primary transition-colors", "aria-label": "Clear search" },
 		[icon("x", size === "large" ? 18 : 16)],
 		() => {
 			input.value = "";
@@ -39,14 +39,12 @@ export function renderSearchBar(state: AppState, actions: Actions | null, size: 
 			syncClear();
 		},
 	);
-	const form = el("form", { role: "search", class: "relative" }, [
-		el("button", { type: "submit", "aria-label": "Search", class: `absolute inset-y-0 left-0 flex items-center justify-center text-muted hover:text-primary transition-colors ${size === "large" ? "w-12" : "w-10"}` }, [
-			icon("search", size === "large" ? 20 : 16),
-		]),
-		input,
-		clear,
-		radicals,
-	]);
+	const submit = el("button", {
+		type: "submit",
+		"aria-label": "Search",
+		class: "absolute inset-y-1 right-1 flex items-center justify-center w-10 rounded-md bg-primary text-surface hover:bg-accent transition-colors",
+	}, [icon("search", 18)]);
+	const form = el("form", { role: "search", class: "relative" }, [input, clear, radicals, submit]);
 	const syncClear = () => clear.classList.toggle("hidden", input.value === "");
 	input.addEventListener("input", syncClear);
 	form.addEventListener("submit", (e) => {

@@ -29,7 +29,9 @@ const KANJI_SELECT = `
 	SELECT character, stroke_count, grade, jlpt_level, meanings, readings_on, readings_kun
 	FROM kanji`;
 
-const SUMMARY_SELECT = "SELECT ws.sequence, ws.term, ws.reading, ws.gloss, ws.common FROM top JOIN word_summary ws ON ws.sequence = top.sequence";
+/* word_summary is keyed by (rank, sequence), so the join carries the rank the
+   candidates already know and lands directly on the row's page. */
+const SUMMARY_SELECT = "SELECT ws.sequence, ws.term, ws.reading, ws.gloss, ws.common FROM top JOIN word_summary ws ON ws.rank = top.rank AND ws.sequence = top.sequence";
 
 function placeholders(n: number): string {
 	return Array.from({ length: n }, () => "?").join(", ");
@@ -145,6 +147,17 @@ export class DictRepository {
 
 	constructor(private readonly db: DbWorker) {}
 
+	/* Touches the root pages of every search table so the first real lookup
+	   skips those round trips. Fired once after the database opens. */
+	async warmUp(): Promise<void> {
+		await Promise.allSettled([
+			this.query("SELECT 1 FROM jp_index WHERE key >= 'あ' LIMIT 1"),
+			this.query("SELECT 1 FROM en_index WHERE gloss >= 'm' LIMIT 1"),
+			this.query("SELECT 1 FROM tag_index WHERE tag >= 'is:common' LIMIT 1"),
+			this.query("SELECT 1 FROM word_summary WHERE rank >= 0 LIMIT 1"),
+		]);
+	}
+
 	private query<T>(sql: string, ...params: unknown[]): Promise<T[]> {
 		// sql.js takes the bindings as one array; Comlink's proxy type also loses the generic.
 		return this.db.db.query(sql, params) as Promise<T[]>;
@@ -201,12 +214,10 @@ export class DictRepository {
 			 ),
 			 top AS (
 			   SELECT sequence, min(sense_rank) AS a, min(match_type) AS b,
-			          min(position) AS c, min(rank) AS d
-			   FROM hits GROUP BY sequence ORDER BY a, b, c, d LIMIT ?7
+			          min(position) AS c, min(rank) AS rank
+			   FROM hits GROUP BY sequence ORDER BY a, b, c, rank LIMIT ?7
 			 )
-			 SELECT ws.sequence, ws.term, ws.reading, ws.gloss, ws.common
-			 FROM top JOIN word_summary ws ON ws.sequence = top.sequence
-			 ORDER BY top.a, top.b, top.c, top.d`,
+			 ${SUMMARY_SELECT} ORDER BY top.a, top.b, top.c, top.rank`,
 			q,
 			`to ${q}`,
 			`${q} %`,

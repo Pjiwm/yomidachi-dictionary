@@ -6,7 +6,8 @@ import { parseHash, routeQuery } from "./router.ts";
 import type { Store } from "./state.ts";
 import type { SearchResults } from "../types.ts";
 
-const RESULT_LIMIT = 50;
+/* Each result row the list shows costs about one round trip, so start small. */
+const RESULT_PAGE = 25;
 /* Below this a lookup feels instant; showing a skeleton would only flash. */
 const SKELETON_DELAY_MS = 180;
 
@@ -28,7 +29,7 @@ export class Actions {
 
 		const query = routeQuery(route);
 		if (query !== this.store.current.query || this.store.current.results === null) {
-			void this.search(query);
+			void this.search(query, RESULT_PAGE);
 		}
 		if (route.kind === "word" && !(previous.kind === "word" && previous.sequence === route.sequence)) {
 			void this.loadWord(route.sequence);
@@ -39,9 +40,14 @@ export class Actions {
 		}
 	}
 
-	private async search(query: string): Promise<void> {
+	async showMoreResults(): Promise<void> {
+		const { query, resultLimit } = this.store.current;
+		await this.search(query, resultLimit + RESULT_PAGE, true);
+	}
+
+	private async search(query: string, limit: number, keepResults = false): Promise<void> {
 		const token = ++this.searchToken;
-		this.store.update({ query, kanjiExpanded: false });
+		this.store.update({ query, resultLimit: limit, kanjiExpanded: keepResults && this.store.current.kanjiExpanded });
 		if (!query.trim()) {
 			this.store.update({ results: null, searching: false });
 			return;
@@ -51,7 +57,7 @@ export class Actions {
 			if (token === this.searchToken) this.store.update({ searching: true });
 		}, SKELETON_DELAY_MS);
 		try {
-			const results = await this.runSearch(query);
+			const results = await this.runSearch(query, limit);
 			if (token !== this.searchToken) return;
 			this.store.update({ results, searching: false });
 		} catch (err) {
@@ -63,7 +69,7 @@ export class Actions {
 		}
 	}
 
-	private async runSearch(query: string): Promise<SearchResults> {
+	private async runSearch(query: string, limit: number): Promise<SearchResults> {
 		const { text, chips } = parseQuery(query);
 		const resolved = chips.map(resolveFilter).filter((f): f is ResolvedFilter => f !== null);
 		const kanjiOnly = resolved.some((f) => f.kind === "kanjiOnly");
@@ -71,10 +77,10 @@ export class Actions {
 
 		let results: SearchResults;
 		if (filters.length > 0 || hasWildcard(text)) {
-			results = await this.repository.advancedSearch(text, filters, RESULT_LIMIT);
+			results = await this.repository.advancedSearch(text, filters, limit);
 		} else {
 			const [words, kanji] = await Promise.all([
-				kanjiOnly ? Promise.resolve([]) : this.repository.search(text, RESULT_LIMIT),
+				kanjiOnly ? Promise.resolve([]) : this.repository.search(text, limit),
 				this.repository.kanjiForText(text),
 			]);
 			results = { words, kanji };

@@ -58,16 +58,21 @@ function wordRow(w: WordSummary, query: string, selected: boolean): HTMLElement 
 export function renderResultsList(state: AppState, actions: Actions | null): HTMLElement {
 	const empty = (text: string) => el("div", { class: "flex-1 flex items-center justify-center text-muted text-sm p-6" }, [text]);
 	if (state.searching) {
-		// Same shape as a word row: term, reading, then the gloss line.
-		return el("div", { class: "flex-1 min-h-0 overflow-hidden" }, Array.from({ length: 8 }, (_, i) =>
-			skeleton(
-				[
-					el("div", { class: "flex items-end gap-2 mb-2" }, [bone(`${2.5 + (i % 3) * 0.75}rem`, "1.25rem"), bone("3rem", "0.875rem")]),
-					bone(`${45 + ((i * 23) % 40)}%`),
-				],
-				"px-4 py-2.5 border-b border-border-subtle",
-			),
-		));
+		// Mirrors the list: a section label, then rows of term, reading, common pill and gloss.
+		const rows = Array.from({ length: 8 }, (_, i) =>
+			el("div", { class: "min-h-14 px-4 py-2 border-b border-border-subtle" }, [
+				el("div", { class: "flex items-baseline gap-2 mb-1.5" }, [
+					bone(`${2.5 + (i % 3) * 0.75}rem`, "1.375rem"),
+					bone(`${2 + (i % 2)}rem`, "0.875rem"),
+					i % 3 === 0 ? bone("3rem", "0.875rem", "rounded-sm") : null,
+				].filter((n): n is HTMLElement => n !== null)),
+				bone(`${45 + ((i * 23) % 40)}%`, "0.75rem"),
+			]),
+		);
+		return skeleton(
+			[el("div", { class: "px-4 pt-3 pb-1.5 border-b border-border-subtle" }, [bone("4rem", "0.75rem")]), ...rows],
+			"flex-1 min-h-0 overflow-hidden",
+		);
 	}
 	if (!state.results) return empty("Type a word above to search.");
 
@@ -98,7 +103,16 @@ export function renderResultsList(state: AppState, actions: Actions | null): HTM
 
 	if (words.length) {
 		sections.push(sectionHeader("Words", words.length, null), ...words.map((w) => wordRow(w, state.query, w.sequence === selectedSequence)));
+		if (words.length >= state.resultLimit) {
+			sections.push(
+				button(
+					{ class: "w-full min-h-12 text-sm text-muted hover:text-secondary border-b border-border-subtle" },
+					["Show more"],
+					() => void actions?.showMoreResults(),
+				),
+			);
+		}
 	}
 
-	return el("div", { class: "flex-1 min-h-0 overflow-y-auto", role: "region", "aria-label": "Search results" }, sections);
+	return el("div", { class: "flex-1 min-h-0 overflow-y-auto", role: "region", "aria-label": "Search results", "data-scroll": "results" }, sections);
 }

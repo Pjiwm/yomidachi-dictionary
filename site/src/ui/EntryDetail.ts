@@ -126,15 +126,19 @@ export function renderDetail(state: AppState, actions: Actions | null): HTMLElem
 	const centered = (text: string) => el("div", { class: "flex-1 flex items-center justify-center text-muted text-sm p-6" }, [text]);
 	let body: HTMLElement;
 	if (state.detailLoading) {
-		// Same shape as an entry: headword, reading, chips, then numbered meanings.
+		// Mirrors the entry: headword and copy, reading, chips, "Meanings" label, numbered rows with a tag line.
+		const meaning = (w: string) =>
+			el("div", { class: "flex gap-2 items-start py-2" }, [
+				bone("1.5rem", "0.875rem", "mt-0.5 shrink-0"),
+				el("div", { class: "flex-1" }, [bone(w, "0.875rem", "mb-2"), bone("28%", "0.625rem")]),
+			]);
 		body = skeleton(
 			[
-				bone("9rem", "2.25rem", "mb-3"),
-				bone("5rem", "1.125rem", "mb-4"),
-				el("div", { class: "flex gap-2 mb-8" }, [bone("4rem", "1.25rem"), bone("5rem", "1.25rem")]),
-				...["70%", "55%", "80%", "45%"].map((w) =>
-					el("div", { class: "flex gap-3 items-center mb-4" }, [bone("1rem", "0.875rem"), bone(w, "0.875rem")]),
-				),
+				el("div", { class: "flex items-center gap-3" }, [bone("7rem", "2.5rem"), bone("1rem", "1rem", "rounded-sm")]),
+				el("div", { class: "flex items-center gap-3 mt-2" }, [bone("5rem", "1.25rem"), bone("1rem", "1rem", "rounded-sm")]),
+				el("div", { class: "flex gap-2 mt-4 flex-wrap" }, [bone("4.5rem", "1.5rem"), bone("4rem", "1.5rem"), bone("3.5rem", "1.5rem")]),
+				el("div", { class: "border-t border-border-subtle mt-6 pt-4" }, [bone("4.5rem", "0.75rem", "mb-3"), meaning("72%"), meaning("48%"), meaning("64%")]),
+				el("div", { class: "border-t border-border-subtle mt-4 pt-4" }, [bone("5rem", "0.75rem", "mb-3"), bone("40%", "0.875rem")]),
 			],
 			"p-6",
 		);
@@ -144,7 +148,7 @@ export function renderDetail(state: AppState, actions: Actions | null): HTMLElem
 	else if (state.detail.kind === "kanji") body = renderKanjiDetail(state.detail.entry);
 	else body = wordDetail(state.detail, state.query, actions);
 
-	return el("div", { class: "flex-1 min-h-0 overflow-y-auto flex flex-col", role: "region", "aria-label": "Entry" }, [
+	return el("div", { class: "flex-1 min-h-0 overflow-y-auto flex flex-col", role: "region", "aria-label": "Entry", "data-scroll": "detail" }, [
 		state.route.kind !== "search" ? backBar(state.query) : null,
 		body,
 	]);

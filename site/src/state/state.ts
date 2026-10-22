@@ -39,6 +39,8 @@ export interface AppState {
 	meta: DictionaryMeta | null;
 	query: string;
 	results: SearchResults | null;
+	/* How many words the current search asked for; "Show more" raises it. */
+	resultLimit: number;
 	searching: boolean;
 	kanjiExpanded: boolean;
 	detail: Detail | null;
@@ -52,6 +54,7 @@ export const initialState: AppState = {
 	meta: __DICTIONARY_META__,
 	query: "",
 	results: null,
+	resultLimit: 25,
 	searching: false,
 	kanjiExpanded: false,
 	detail: null,
