@@ -21,6 +21,34 @@ python src/main.py
 
 Select a dictionary to build or "Build All". Output goes to `db_files/`.
 
+## Website
+
+`site/` is the Yomidachi Dictionary website: a static page on GitHub Pages
+that queries `Japanese_English.db` in the browser. Nothing runs on a server;
+the database is split into chunks and SQLite (compiled to WebAssembly) fetches
+only the pages a lookup touches.
+
+Build it locally:
+
+```bash
+python src/main.py --build Japanese_English   # the dictionary, if db_files/ is empty
+python scripts/prepare_site_db.py             # adds the site's search tables, chunks into site/public/db/
+cd site
+npm install
+npm run dev                                   # http://localhost:5173
+```
+
+`npm run build` writes the production site to `site/dist/`; `npm run preview`
+serves it. `npm test` runs the unit tests for the query parser and filters.
+
+The prepare script leaves `db_files/Japanese_English.db` untouched. It works on
+a copy, adding tables that make filtering and ranking cheap over HTTP, and
+writes `meta.json` with the counts the landing page shows.
+
+Deployment runs from `.github/workflows/pages.yml`: it builds the dictionary,
+prepares the database, builds the site and publishes it to GitHub Pages. The
+`base` input selects the project URL or a custom domain.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
@@ -47,3 +75,7 @@ See [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md) for full details.
 
 Source code is licensed under the [MIT License](LICENSE).
 Dictionary data has its own licensing - see above.
+
+The Yomidachi name, wordmark and icons are not covered by the MIT License.
+They identify this project and the Yomidachi app; forks and derived work may
+not use them to present themselves as Yomidachi.
