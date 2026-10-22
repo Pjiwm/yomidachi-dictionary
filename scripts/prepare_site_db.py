@@ -10,8 +10,9 @@ from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 
-# Smaller pages make indexed lookups cheaper over HTTP.
-PAGE_SIZE = 1024
+# Every page is one HTTP round trip whatever its size, and latency, not
+# bandwidth, is what a phone pays for; 4 KiB pages quarter the request count.
+PAGE_SIZE = 4096
 DEFAULT_CHUNK_SIZE = 10 * 1024 * 1024
 SUFFIX_LENGTH = 3
 CHUNK_PREFIX = "db.sqlite3."
@@ -119,29 +120,32 @@ def build_search_tables(conn: sqlite3.Connection) -> None:
         DROP TABLE IF EXISTS kanji_reading;
         DROP TABLE IF EXISTS kanji_radicals;
 
+        /* Clustered by rank: a result list is mostly common words, so its rows
+           sit in a few adjacent pages instead of one random page each. */
         CREATE TABLE word_summary (
-            sequence INTEGER PRIMARY KEY,
+            rank INTEGER NOT NULL,
+            sequence INTEGER NOT NULL,
             term TEXT NOT NULL,
             reading TEXT NOT NULL,
             gloss TEXT NOT NULL,
             common INTEGER NOT NULL,
-            rank INTEGER NOT NULL
-        );
+            PRIMARY KEY (rank, sequence)
+        ) WITHOUT ROWID;
         INSERT INTO word_summary
-        SELECT w.sequence, p.term, p.reading,
+        SELECT CASE WHEN w.freq_rank IS NOT NULL THEN w.freq_rank
+                    ELSE {UNRANKED} - min(coalesce(
+                        (SELECT max(frequency) FROM senses f WHERE f.sequence = w.sequence), 0), 99999)
+               END,
+               w.sequence, p.term, p.reading,
                coalesce((SELECT group_concat(gloss, ', ') FROM (
                    SELECT gloss FROM glosses g
                    WHERE g.sense_id = p.id AND g.gloss NOT LIKE 'see:%'
                    ORDER BY g.position)), p.translation, ''),
-               p.frequency > 0,
-               CASE WHEN w.freq_rank IS NOT NULL THEN w.freq_rank
-                    ELSE {UNRANKED} - min(coalesce(
-                        (SELECT max(frequency) FROM senses f WHERE f.sequence = w.sequence), 0), 99999)
-               END
+               p.frequency > 0
         FROM words w
         JOIN senses p ON p.id = (SELECT min(id) FROM senses m WHERE m.sequence = w.sequence);
 
-        CREATE INDEX idx_summary_rank ON word_summary(rank);
+        CREATE INDEX idx_summary_sequence ON word_summary(sequence);
 
         CREATE TABLE tag_index (
             tag TEXT NOT NULL,

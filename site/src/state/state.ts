@@ -22,6 +22,8 @@ export interface RadicalPicker {
 	total: number;
 	/* True only for the render right after opening, so the pop-in plays once. */
 	justOpened: boolean;
+	/* Phones only: the kanji panel takes the larger share of the sheet. */
+	kanjiFocus: boolean;
 }
 
 /* Written by scripts/prepare_site_db.py next to the database chunks. */
@@ -39,6 +41,8 @@ export interface AppState {
 	meta: DictionaryMeta | null;
 	query: string;
 	results: SearchResults | null;
+	/* How many words the current search asked for; "Show more" raises it. */
+	resultLimit: number;
 	searching: boolean;
 	kanjiExpanded: boolean;
 	detail: Detail | null;
@@ -52,6 +56,7 @@ export const initialState: AppState = {
 	meta: __DICTIONARY_META__,
 	query: "",
 	results: null,
+	resultLimit: 25,
 	searching: false,
 	kanjiExpanded: false,
 	detail: null,

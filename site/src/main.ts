@@ -14,14 +14,22 @@ let actions: Actions | null = null;
 const narrowScreen = matchMedia("(max-width: 767px)");
 let lastDetail: unknown = null;
 
-/* Every update rebuilds the DOM, so unsent text in the search field has to survive the swap. */
+/* Every update rebuilds the DOM, so unsent text in the search field and the
+   scroll position of each pane have to survive the swap. */
 store.subscribe((state) => {
-	const previous = root.querySelector<HTMLInputElement>("input[name=q]");
-	const draft = previous && document.activeElement === previous ? { value: previous.value, cursor: previous.selectionStart } : null;
+	const previous = document.activeElement instanceof HTMLInputElement && document.activeElement.dataset.draft ? document.activeElement : null;
+	const draft = previous ? { key: previous.dataset.draft, value: previous.value, cursor: previous.selectionStart } : null;
+	const scrolls = new Map<string, number>();
+	for (const pane of root.querySelectorAll<HTMLElement>("[data-scroll]")) {
+		scrolls.set(pane.dataset.scroll ?? "", pane.scrollTop);
+	}
 	root.replaceChildren(renderLayout(state, actions));
+	for (const pane of root.querySelectorAll<HTMLElement>("[data-scroll]")) {
+		pane.scrollTop = scrolls.get(pane.dataset.scroll ?? "") ?? 0;
+	}
 
 	if (draft) {
-		const input = root.querySelector<HTMLInputElement>("input[name=q]");
+		const input = root.querySelector<HTMLInputElement>(`input[data-draft="${draft.key}"]`);
 		if (input) {
 			input.value = draft.value;
 			input.focus();
@@ -52,6 +60,7 @@ openDatabase()
 		actions = new Actions(store, repository);
 		window.addEventListener("hashchange", () => void actions?.onRoute(location.hash));
 		void actions.onRoute(location.hash);
+		void repository.warmUp();
 		if (import.meta.env.DEV) {
 			Object.assign(window, { dict: repository, stats: () => db.worker.getStats() });
 		}

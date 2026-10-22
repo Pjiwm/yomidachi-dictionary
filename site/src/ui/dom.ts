@@ -88,7 +88,7 @@ export function skeleton(children: HTMLElement[], extra = ""): HTMLElement {
 /* Appends to the search field without submitting, so chips and the radical
    picker compose a query the visitor sends when ready. */
 export function insertIntoSearch(text: string, asToken: boolean): void {
-	const input = document.querySelector<HTMLInputElement>("input[name=q]");
+	const input = document.querySelector<HTMLInputElement>('input[data-draft="q"]');
 	if (!input) return;
 	input.value = asToken ? withToken(input.value, text) : input.value + text;
 	input.focus();
