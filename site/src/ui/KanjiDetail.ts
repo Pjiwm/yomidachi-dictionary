@@ -1,12 +1,12 @@
 import type { KanjiEntry } from "../types.ts";
-import { button, copyButton, el, filterChip } from "./dom.ts";
+import { button, copyButton, el, filterChip, ja } from "./dom.ts";
 import { icon } from "./icons.ts";
 
 function readings(title: string, value: string): HTMLElement | null {
 	if (!value) return null;
 	return el("section", { class: "border-t border-border-subtle pt-4 mt-5" }, [
 		el("h2", { class: "section-label mb-2" }, [title]),
-		el("div", { class: "text-primary text-sm leading-relaxed" }, [value.split(" ").join("、 ")]),
+		ja("div", { class: "text-primary text-sm leading-relaxed" }, [value.split(" ").join("、 ")]),
 	]);
 }
 
@@ -18,7 +18,7 @@ export function renderKanjiDetail(k: KanjiEntry): HTMLElement {
 	return el("article", { class: "p-6" }, [
 		el("div", { class: "flex justify-between items-start gap-4 mb-2" }, [
 			el("div", { class: "flex items-center gap-3" }, [
-				el("h1", { class: "text-7xl text-primary font-light leading-none" }, [k.character]),
+				ja("h1", { class: "text-7xl text-primary font-light leading-none outline-none", tabindex: "-1", "data-detail-heading": "" }, [k.character]),
 				copyButton(k.character),
 			]),
 			button({ class: "flex items-center gap-1.5 px-3 py-2 border border-border-default rounded-lg text-muted hover:text-accent hover:border-accent transition-colors text-sm shrink-0" }, [icon("copy", 16), "Copy entry"], copyAll),

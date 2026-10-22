@@ -1,4 +1,4 @@
-import { highLowPattern, parseDownsteps, splitMora } from "../search/pitch.ts";
+import { highLowPattern, parseDownsteps, pitchType, splitMora } from "../search/pitch.ts";
 import { el } from "./dom.ts";
 
 function pattern(reading: string, downstep: number): HTMLElement {
@@ -8,7 +8,8 @@ function pattern(reading: string, downstep: number): HTMLElement {
 		const step = i > 0 && high[i - 1] !== high[i];
 		return el("span", { class: `pitch-mora ${high[i] ? "pitch-high" : "pitch-low"} ${step ? "pitch-step" : ""}` }, [m]);
 	});
-	return el("span", { class: "inline-flex items-stretch" }, [
+	const label = `${reading}, pitch accent ${downstep}, ${pitchType(mora.length, downstep)}`;
+	return el("span", { class: "inline-flex items-stretch", role: "img", "aria-label": label, lang: "ja" }, [
 		...cells,
 		downstep === mora.length ? el("span", { class: "pitch-tail" }) : null,
 		el("span", { class: "text-muted text-xs ml-1.5 self-center" }, [`[${downstep}]`]),

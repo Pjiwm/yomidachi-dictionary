@@ -26,11 +26,25 @@ function themeButton(): HTMLButtonElement {
 function wordmark(size: "large" | "small"): HTMLElement {
 	const classes = size === "large" ? "text-4xl font-semibold tracking-tight" : "font-semibold tracking-tight";
 	const mark = el("span", { class: "self-center" }, [logo(size === "large" ? 40 : 22)]);
-	return el("a", { href: "#/", class: `${classes} text-primary flex items-baseline gap-2` }, [
+	return el("a", { href: "#/", class: `${classes} text-primary flex items-baseline gap-2 shrink-0`, "aria-label": "Yomidachi Dictionary, home" }, [
 		mark,
-		"Yomidachi",
-		el("span", { class: `text-muted font-normal ${size === "large" ? "text-xl" : "text-sm"}` }, ["Dictionary"]),
+		el("span", { class: size === "small" ? "hidden sm:inline" : "" }, ["Yomidachi"]),
+		el("span", { class: `text-muted font-normal ${size === "large" ? "text-xl" : "text-sm hidden md:inline"}` }, ["Dictionary"]),
 	]);
+}
+
+function skipLink(): HTMLElement {
+	return el("a", { href: "#main", class: "sr-only-focusable" }, ["Skip to content"]);
+}
+
+/* Screen readers hear how many results came back without leaving the search field. */
+function resultsAnnouncer(state: AppState): HTMLElement {
+	let text = "";
+	if (state.results && !state.searching) {
+		const { words, kanji } = state.results;
+		text = words.length + kanji.length === 0 ? "No results" : `${words.length} words and ${kanji.length} kanji`;
+	}
+	return el("div", { class: "sr-only", "aria-live": "polite", role: "status" }, [text]);
 }
 
 function errorBanner(message: string): HTMLElement {
@@ -44,11 +58,12 @@ export function renderLayout(state: AppState, actions: Actions | null): HTMLElem
 	if (state.route.kind === "home") {
 		const searchBar = renderSearchBar(state, actions, "large");
 		return el("div", { class: "min-h-dvh flex flex-col" }, [
+			skipLink(),
 			el("header", { class: "px-4 py-2 flex justify-end" }, [themeButton()]),
 			state.error ? errorBanner(state.error) : null,
-			el("main", { class: "flex-1 flex flex-col items-center px-4 pt-[5vh] pb-12 gap-6" }, [
-				wordmark("large"),
-				el("div", { class: "w-full max-w-4xl" }, [searchBar, renderRadicalPicker(state, actions)]),
+			el("main", { id: "main", class: "flex-1 flex flex-col items-center px-4 pt-[5vh] pb-12 gap-6" }, [
+				el("h1", { class: "contents" }, [wordmark("large")]),
+				el("div", { class: "relative w-full max-w-4xl" }, [searchBar, renderRadicalPicker(state, actions)]),
 				renderLanding(state),
 			]),
 			renderFooter(state, actions),
@@ -57,18 +72,16 @@ export function renderLayout(state: AppState, actions: Actions | null): HTMLElem
 
 	const showingDetail = state.route.kind !== "search";
 	const searchBar = renderSearchBar(state, actions, "compact");
-	const picker = renderRadicalPicker(state, actions);
 	return el("div", { class: "h-dvh flex flex-col" }, [
-		el("header", { class: "border-b border-border-subtle px-4 py-2" }, [
-			el("div", { class: "flex items-center gap-4" }, [
-				wordmark("small"),
-				el("div", { class: "flex-1 max-w-3xl" }, [searchBar]),
-				el("div", { class: "ml-auto" }, [themeButton()]),
-			]),
-			picker,
+		skipLink(),
+		el("header", { class: "border-b border-border-subtle px-3 sm:px-4 py-2 flex items-center gap-2 sm:gap-4" }, [
+			wordmark("small"),
+			el("div", { class: "relative flex-1 max-w-3xl" }, [searchBar, renderRadicalPicker(state, actions)]),
+			el("div", { class: "ml-auto" }, [themeButton()]),
 		]),
 		state.error ? errorBanner(state.error) : null,
-		el("main", { class: "flex-1 min-h-0 grid md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]" }, [
+		resultsAnnouncer(state),
+		el("main", { id: "main", class: "flex-1 min-h-0 grid md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]" }, [
 			el("div", { class: `min-h-0 border-r border-border-subtle ${showingDetail ? "hidden md:flex" : "flex"} flex-col` }, [
 				renderResultsList(state, actions),
 			]),

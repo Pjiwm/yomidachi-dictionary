@@ -1,8 +1,8 @@
 import type { Actions } from "../state/actions.ts";
-import { navigate } from "../state/router.ts";
+import { formatRoute } from "../state/router.ts";
 import type { AppState } from "../state/state.ts";
 import type { KanjiEntry, WordSummary } from "../types.ts";
-import { bone, button, el, skeleton } from "./dom.ts";
+import { bone, button, el, ja, link, skeleton } from "./dom.ts";
 import { icon } from "./icons.ts";
 
 /* Two rows of tiles at the default width before "Show all" is needed. */
@@ -13,40 +13,45 @@ function firstMeaning(meanings: string): string {
 }
 
 function kanjiTile(k: KanjiEntry, query: string, selected: boolean): HTMLElement {
-	return button(
+	return link(
+		formatRoute({ kind: "kanji", character: k.character, query }),
 		{
 			class: `flex flex-col items-center justify-center gap-0.5 w-[4.25rem] h-[4.25rem] px-1 rounded-lg border transition-colors ${
 				selected ? "border-border-strong bg-surface-sunken" : "border-border-subtle hover:bg-surface-sunken"
 			}`,
 			title: k.meanings,
+			"aria-label": `${k.character}, ${k.meanings}`,
+			"aria-current": selected ? "page" : "false",
 		},
 		[
-			el("span", { class: "text-primary text-2xl leading-none" }, [k.character]),
-			el("span", { class: "text-muted text-[10px] leading-tight text-center truncate w-full" }, [firstMeaning(k.meanings)]),
+			ja("span", { class: "text-primary text-2xl leading-none" }, [k.character]),
+			el("span", { class: "text-muted text-[10px] leading-tight text-center truncate w-full", "aria-hidden": "true" }, [firstMeaning(k.meanings)]),
 		],
-		() => navigate({ kind: "kanji", character: k.character, query }),
 	);
 }
 
 function sectionHeader(title: string, count: number, action: HTMLElement | null): HTMLElement {
 	return el("div", { class: "sticky top-0 z-10 bg-surface flex items-center justify-between px-4 pt-3 pb-1.5 border-b border-border-subtle" }, [
-		el("h2", { class: "section-label" }, [title, " ", el("span", { class: "text-muted/70 tracking-normal" }, [String(count)])]),
+		el("h2", { class: "section-label" }, [title, " ", el("span", { class: "tracking-normal" }, [String(count)])]),
 		action,
 	]);
 }
 
 function wordRow(w: WordSummary, query: string, selected: boolean): HTMLElement {
-	return button(
-		{ class: `w-full text-left px-4 py-2 border-b border-border-subtle hover:bg-surface-sunken transition-colors ${selected ? "bg-surface-sunken" : ""}` },
+	return link(
+		formatRoute({ kind: "word", sequence: w.sequence, query }),
+		{
+			class: `block w-full min-h-14 px-4 py-2 border-b border-border-subtle hover:bg-surface-sunken transition-colors ${selected ? "bg-surface-sunken" : ""}`,
+			"aria-current": selected ? "page" : "false",
+		},
 		[
 			el("div", { class: "flex items-baseline gap-2 min-w-0" }, [
-				el("span", { class: "text-primary text-lg font-medium truncate" }, [w.term]),
-				w.reading !== w.term ? el("span", { class: "text-muted text-sm" }, [w.reading]) : null,
+				ja("span", { class: "text-primary text-lg font-medium truncate" }, [w.term]),
+				w.reading !== w.term ? ja("span", { class: "text-muted text-sm" }, [w.reading]) : null,
 				w.common ? el("span", { class: "border border-common text-common text-[10px] font-medium shrink-0 px-1.5 rounded" }, ["common"]) : null,
 			]),
 			el("div", { class: "text-secondary text-xs truncate" }, [w.gloss]),
 		],
-		() => navigate({ kind: "word", sequence: w.sequence, query }),
 	);
 }
 
@@ -79,7 +84,7 @@ export function renderResultsList(state: AppState, actions: Actions | null): HTM
 		const toggle =
 			kanji.length > COLLAPSED_KANJI
 				? button(
-						{ class: "flex items-center gap-1 text-xs text-muted hover:text-secondary" },
+						{ class: "flex items-center gap-1 min-h-11 px-2 -mr-2 text-xs text-muted hover:text-secondary", "aria-expanded": String(state.kanjiExpanded) },
 						[state.kanjiExpanded ? "Show fewer" : "Show all", icon("chevronDown", 12)],
 						() => actions?.toggleKanjiExpanded(),
 					)
@@ -95,5 +100,5 @@ export function renderResultsList(state: AppState, actions: Actions | null): HTM
 		sections.push(sectionHeader("Words", words.length, null), ...words.map((w) => wordRow(w, state.query, w.sequence === selectedSequence)));
 	}
 
-	return el("div", { class: "flex-1 min-h-0 overflow-y-auto" }, sections);
+	return el("div", { class: "flex-1 min-h-0 overflow-y-auto", role: "region", "aria-label": "Search results" }, sections);
 }

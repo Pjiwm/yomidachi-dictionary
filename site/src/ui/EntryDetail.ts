@@ -1,10 +1,10 @@
 import type { Actions } from "../state/actions.ts";
-import { navigate } from "../state/router.ts";
+import { formatRoute, navigate } from "../state/router.ts";
 import type { AppState, WordDetail } from "../state/state.ts";
 import { tokenForCode } from "../search/filters.ts";
 import { formatPos, posCodes, posLabel } from "../search/pos.ts";
 import type { DictEntry, KanjiEntry } from "../types.ts";
-import { bone, button, copyButton, el, filterChip, skeleton } from "./dom.ts";
+import { bone, button, copyButton, el, filterChip, ja, link, skeleton } from "./dom.ts";
 import { icon } from "./icons.ts";
 import { renderKanjiDetail } from "./KanjiDetail.ts";
 import { renderPitchDiagram } from "./PitchDiagram.ts";
@@ -21,9 +21,7 @@ function uniqueBy<T>(items: T[], key: (item: T) => string): T[] {
 
 export function backBar(query: string): HTMLElement {
 	return el("div", { class: "md:hidden sticky top-0 z-10 flex items-center border-b border-border-subtle bg-surface" }, [
-		button({ class: "icon-button", "aria-label": "Back to results" }, [icon("back", 24)], () =>
-			navigate(query ? { kind: "search", query } : { kind: "home" }),
-		),
+		link(formatRoute(query ? { kind: "search", query } : { kind: "home" }), { class: "icon-button", "aria-label": "Back to results" }, [icon("back", 24)]),
 		el("span", { class: "font-medium" }, ["Results"]),
 	]);
 }
@@ -68,14 +66,12 @@ function kanjiRow(k: KanjiEntry, query: string): HTMLElement {
 		.filter(Boolean)
 		.join(" · ");
 	return el("div", { class: "mb-5 flex gap-4 items-start" }, [
-		button({ class: "text-5xl text-primary font-semibold shrink-0 w-16 text-center hover:text-accent transition-colors" }, [k.character], () =>
-			navigate({ kind: "kanji", character: k.character, query }),
-		),
+		link(formatRoute({ kind: "kanji", character: k.character, query }), { class: "text-5xl text-primary font-semibold shrink-0 w-16 text-center hover:text-accent transition-colors", lang: "ja", "aria-label": `${k.character}, ${k.meanings}` }, [k.character]),
 		el("div", { class: "flex-1 min-w-0" }, [
 			el("div", { class: "text-primary text-sm font-medium" }, [k.meanings]),
 			line ? el("div", { class: "text-muted text-xs mt-1.5" }, [line]) : null,
-			k.readingsKun ? el("div", { class: "text-sm mt-1.5" }, [el("span", { class: "text-muted" }, ["Kun: "]), el("span", { class: "text-secondary" }, [k.readingsKun.split(" ").join("、 ")])]) : null,
-			k.readingsOn ? el("div", { class: "text-sm mt-0.5" }, [el("span", { class: "text-muted" }, ["On: "]), el("span", { class: "text-secondary" }, [k.readingsOn.split(" ").join("、 ")])]) : null,
+			k.readingsKun ? el("div", { class: "text-sm mt-1.5" }, [el("span", { class: "text-muted" }, ["Kun: "]), ja("span", { class: "text-secondary" }, [k.readingsKun.split(" ").join("、 ")])]) : null,
+			k.readingsOn ? el("div", { class: "text-sm mt-0.5" }, [el("span", { class: "text-muted" }, ["On: "]), ja("span", { class: "text-secondary" }, [k.readingsOn.split(" ").join("、 ")])]) : null,
 		]),
 	]);
 }
@@ -96,13 +92,13 @@ function wordDetail(detail: WordDetail, query: string, actions: Actions | null):
 		el("div", { class: "flex justify-between items-start gap-4" }, [
 			el("div", {}, [
 				el("div", { class: "flex items-center gap-2" }, [
-					el("h1", { class: "text-4xl text-primary font-semibold" }, [primary.term]),
+					ja("h1", { class: "text-4xl text-primary font-semibold outline-none", tabindex: "-1", "data-detail-heading": "" }, [primary.term]),
 					copyButton(primary.term),
 				]),
 				el("div", { class: "flex items-center gap-2 mt-1 text-lg" }, [
 					primary.pitchAccent
 						? renderPitchDiagram(primary.reading, primary.pitchAccent)
-						: el("span", { class: "text-muted" }, [primary.reading]),
+						: ja("span", { class: "text-muted" }, [primary.reading]),
 					copyButton(primary.reading),
 				]),
 			]),
@@ -120,7 +116,7 @@ function wordDetail(detail: WordDetail, query: string, actions: Actions | null):
 		]),
 		section("Meanings", senses.map((s, i) => senseRow(s, i, actions))),
 		otherForms.length
-			? section("Other forms", otherForms.map((f) => el("div", { class: "text-primary text-sm mb-1" }, [f.term, " ", el("span", { class: "text-muted" }, [`【${f.reading}】`])])))
+			? section("Other forms", otherForms.map((f) => ja("div", { class: "text-primary text-sm mb-1" }, [f.term, " ", el("span", { class: "text-muted" }, [`【${f.reading}】`])])))
 			: null,
 		detail.kanji.length ? section("Kanji", detail.kanji.map((k) => kanjiRow(k, query))) : null,
 	]);
@@ -148,7 +144,7 @@ export function renderDetail(state: AppState, actions: Actions | null): HTMLElem
 	else if (state.detail.kind === "kanji") body = renderKanjiDetail(state.detail.entry);
 	else body = wordDetail(state.detail, state.query, actions);
 
-	return el("div", { class: "flex-1 min-h-0 overflow-y-auto flex flex-col" }, [
+	return el("div", { class: "flex-1 min-h-0 overflow-y-auto flex flex-col", role: "region", "aria-label": "Entry" }, [
 		state.route.kind !== "search" ? backBar(state.query) : null,
 		body,
 	]);

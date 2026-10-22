@@ -26,10 +26,21 @@ export function button(
 }
 
 export function copyButton(text: string, size = 16): HTMLButtonElement {
-	return button({ class: "icon-button", "aria-label": "Copy", title: "Copy" }, [icon("copy", size)], (e) => {
+	const label = `Copy ${text.length > 40 ? `${text.slice(0, 40)}…` : text}`;
+	return button({ class: "icon-button", "aria-label": label, title: "Copy" }, [icon("copy", size)], (e) => {
 		e.stopPropagation();
 		void navigator.clipboard.writeText(text);
 	});
+}
+
+/* An in-app link: real navigation for the keyboard, middle-click and screen readers. */
+export function link(href: string, attrs: Record<string, string>, children: (Node | string | null | false)[]): HTMLAnchorElement {
+	return el("a", { href, ...attrs }, children);
+}
+
+/* Japanese text gets its language marked so screen readers switch voice. */
+export function ja(tag: "span" | "div" | "h1", attrs: Record<string, string>, children: (Node | string)[]): HTMLElement {
+	return el(tag, { ...attrs, lang: "ja" }, children);
 }
 
 const EASE = "cubic-bezier(0.16, 1, 0.3, 1)";

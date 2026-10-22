@@ -20,6 +20,8 @@ export interface RadicalPicker {
 	available: string[];
 	kanji: KanjiEntry[];
 	total: number;
+	/* True only for the render right after opening, so the pop-in plays once. */
+	justOpened: boolean;
 }
 
 /* Written by scripts/prepare_site_db.py next to the database chunks. */

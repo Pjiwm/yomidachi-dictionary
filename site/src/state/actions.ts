@@ -113,7 +113,7 @@ export class Actions {
 	async openRadicalPicker(): Promise<void> {
 		if (this.store.current.radicalPicker) return;
 		const radicals = await this.repository.radicals().catch(() => []);
-		this.store.update({ radicalPicker: { radicals, selected: [], available: [], kanji: [], total: 0 } });
+		this.store.update({ radicalPicker: { radicals, selected: [], available: [], kanji: [], total: 0, justOpened: true } });
 	}
 
 	closeRadicalPicker(): void {
@@ -136,7 +136,7 @@ export class Actions {
 	private async selectRadicals(selected: string[]): Promise<void> {
 		const picker = this.store.current.radicalPicker;
 		if (!picker) return;
-		this.store.update({ radicalPicker: { ...picker, selected } });
+		this.store.update({ radicalPicker: { ...picker, selected, justOpened: false } });
 		const result = await this.repository.kanjiByRadicals(selected).catch(() => ({ kanji: [], total: 0, available: [] }));
 		const current = this.store.current.radicalPicker;
 		if (!current || current.selected !== selected) return;

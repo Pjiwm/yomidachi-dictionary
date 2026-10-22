@@ -37,6 +37,28 @@
 	.theme-switching * {
 		transition: none !important;
 	}
+	:focus-visible {
+		outline: 2px solid var(--accent);
+		outline-offset: 2px;
+	}
+}
+
+@keyframes pop-in {
+	from {
+		opacity: 0;
+		transform: translateY(-4px) scale(0.985);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+@utility animate-pop-in {
+	animation: pop-in 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+	@media (prefers-reduced-motion: reduce) {
+		animation: none;
+	}
 }
 
 @utility section-label {
@@ -56,7 +78,11 @@
 }
 
 @utility search-input {
-	@apply w-full bg-surface-elevated text-primary border border-border-default rounded-lg outline-none placeholder:text-muted focus:border-accent transition-colors;
+	@apply w-full bg-surface-elevated text-primary border border-border-default rounded-lg outline-none placeholder:text-muted focus:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 transition-colors;
+}
+
+@utility sr-only-focusable {
+	@apply sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-2 focus:left-2 focus:px-3 focus:py-2 focus:rounded focus:bg-surface-elevated focus:text-primary focus:border focus:border-accent;
 }
 
 /* Pitch diagram: a line above a high mora, below a low one, and a step at each change. */

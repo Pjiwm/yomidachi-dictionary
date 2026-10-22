@@ -20,15 +20,16 @@ export function renderSearchBar(state: AppState, actions: Actions | null, size: 
 
 	const radicals = button(
 		{
-			class: `absolute inset-y-0 right-0 flex items-center text-muted hover:text-primary transition-colors ${size === "large" ? "px-4" : "px-3"} ${state.radicalPicker ? "text-accent" : ""}`,
+			class: `absolute inset-y-0 right-0 flex items-center justify-center min-w-11 text-muted hover:text-primary transition-colors ${state.radicalPicker ? "text-accent" : ""}`,
 			"aria-label": "Find kanji by radical",
 			title: "Find kanji by radical",
+			"aria-expanded": String(Boolean(state.radicalPicker)),
 		},
 		[el("span", { class: `font-medium leading-none ${size === "large" ? "text-lg" : "text-base"}` }, ["部"])],
 		() => (state.radicalPicker ? actions?.closeRadicalPicker() : void actions?.openRadicalPicker()),
 	);
 	const clear = button(
-		{ class: `absolute inset-y-0 flex items-center text-muted hover:text-primary transition-colors ${size === "large" ? "right-11 px-2" : "right-9 px-2"}`, "aria-label": "Clear search" },
+		{ class: "absolute inset-y-0 right-11 flex items-center justify-center min-w-10 text-muted hover:text-primary transition-colors", "aria-label": "Clear search" },
 		[icon("x", size === "large" ? 18 : 16)],
 		() => {
 			input.value = "";
@@ -37,7 +38,7 @@ export function renderSearchBar(state: AppState, actions: Actions | null, size: 
 		},
 	);
 	const form = el("form", { role: "search", class: "relative" }, [
-		el("button", { type: "submit", "aria-label": "Search", class: `absolute inset-y-0 flex items-center text-muted hover:text-primary transition-colors ${size === "large" ? "left-4" : "left-3"}` }, [
+		el("button", { type: "submit", "aria-label": "Search", class: `absolute inset-y-0 left-0 flex items-center justify-center text-muted hover:text-primary transition-colors ${size === "large" ? "w-12" : "w-10"}` }, [
 			icon("search", size === "large" ? 20 : 16),
 		]),
 		input,
