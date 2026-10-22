@@ -86,7 +86,7 @@ export function renderLanding(state: AppState, insert: (token: string) => void):
 		? `${format(meta.words)} words and ${format(meta.kanji)} kanji, with pitch accent, JLPT levels and frequency ranks. Data as of ${meta.builtAt}.`
 		: "Words and kanji with pitch accent, JLPT levels and frequency ranks.";
 
-	return el("section", { class: "w-full max-w-3xl" }, [
+	return el("section", { class: "w-full max-w-4xl" }, [
 		el("p", { class: "text-secondary text-sm leading-relaxed" }, [
 			`${inside} Type Japanese in kanji or kana, or an English word. Filters go after the text, like `,
 			code("eat pos:verb jlpt:n5"),

@@ -3,7 +3,7 @@ import { navigate } from "../state/router.ts";
 import type { AppState, WordDetail } from "../state/state.ts";
 import { formatPos } from "../search/pos.ts";
 import type { DictEntry, KanjiEntry } from "../types.ts";
-import { button, copyButton, el } from "./dom.ts";
+import { button, copyButton, el, skeletonLines } from "./dom.ts";
 import { icon } from "./icons.ts";
 import { renderKanjiDetail } from "./KanjiDetail.ts";
 import { renderPitchDiagram } from "./PitchDiagram.ts";
@@ -123,7 +123,13 @@ function wordDetail(detail: WordDetail, query: string, actions: Actions | null):
 export function renderDetail(state: AppState, actions: Actions | null): HTMLElement {
 	const centered = (text: string) => el("div", { class: "flex-1 flex items-center justify-center text-muted text-sm p-6" }, [text]);
 	let body: HTMLElement;
-	if (state.detailLoading) body = centered("Loading…");
+	if (state.detailLoading) {
+		body = el("div", { class: "p-6" }, [
+			el("div", { class: "animate-pulse h-9 w-40 rounded bg-surface-sunken mb-3" }),
+			skeletonLines(["30%", "20%"], { class: "mb-8" }),
+			skeletonLines(["70%", "55%", "80%", "45%", "65%"]),
+		]);
+	}
 	else if (!state.detail) body = centered("Select a word to see its entry.");
 	else if (state.detail.kind === "missing") body = centered("Not found.");
 	else if (state.detail.kind === "kanji") body = renderKanjiDetail(state.detail.entry);

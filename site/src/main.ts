@@ -15,6 +15,12 @@ store.subscribe((state) => root.replaceChildren(renderLayout(state, actions)));
 store.update({});
 followSystemTheme();
 
+if (import.meta.env.PROD && "serviceWorker" in navigator) {
+	window.addEventListener("load", () => {
+		void navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`);
+	});
+}
+
 fetch(`${import.meta.env.BASE_URL}db/meta.json`)
 	.then((res) => (res.ok ? res.json() : null))
 	.then((meta) => store.update({ meta }))

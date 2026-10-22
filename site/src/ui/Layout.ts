@@ -23,7 +23,15 @@ function themeButton(): HTMLButtonElement {
 
 function wordmark(size: "large" | "small"): HTMLElement {
 	const classes = size === "large" ? "text-4xl font-semibold tracking-tight" : "font-semibold tracking-tight";
+	const logo = el("img", {
+		src: `${import.meta.env.BASE_URL}icons/favicon.svg`,
+		alt: "",
+		width: size === "large" ? "44" : "24",
+		height: size === "large" ? "44" : "24",
+		class: "self-center",
+	});
 	return el("a", { href: "#/", class: `${classes} text-primary flex items-baseline gap-2` }, [
+		logo,
 		"Yomidachi",
 		el("span", { class: `text-muted font-normal ${size === "large" ? "text-xl" : "text-sm"}` }, ["Dictionary"]),
 	]);
@@ -42,8 +50,9 @@ export function renderLayout(state: AppState, actions: Actions | null): HTMLElem
 		const input = searchBar.querySelector("input");
 		const insertToken = (token: string) => {
 			if (!input) return;
-			const base = input.value.trimEnd();
-			input.value = base ? `${base} ${token}` : token;
+			const words = input.value.trim().split(/\s+/).filter(Boolean);
+			if (!words.includes(token)) words.push(token);
+			input.value = words.join(" ");
 			input.focus();
 		};
 		return el("div", { class: "min-h-dvh flex flex-col" }, [
@@ -51,7 +60,7 @@ export function renderLayout(state: AppState, actions: Actions | null): HTMLElem
 			state.error ? errorBanner(state.error) : null,
 			el("main", { class: "flex-1 flex flex-col items-center px-4 pt-[5vh] pb-12 gap-6" }, [
 				wordmark("large"),
-				el("div", { class: "w-full max-w-3xl" }, [searchBar]),
+				el("div", { class: "w-full max-w-4xl" }, [searchBar]),
 				renderLanding(state, insertToken),
 			]),
 			renderFooter(state, actions),
@@ -63,7 +72,7 @@ export function renderLayout(state: AppState, actions: Actions | null): HTMLElem
 		el("header", { class: "border-b border-border-subtle px-4 py-2 flex items-center gap-4" }, [
 			wordmark("small"),
 			el("div", { class: "flex-1 max-w-xl" }, [renderSearchBar(state, actions, "compact")]),
-			themeButton(),
+			el("div", { class: "ml-auto" }, [themeButton()]),
 		]),
 		state.error ? errorBanner(state.error) : null,
 		el("main", { class: "flex-1 min-h-0 grid md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]" }, [

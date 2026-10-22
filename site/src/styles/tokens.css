@@ -12,7 +12,7 @@
 	--border-strong: rgba(26, 24, 20, 0.22);
 	--accent: #b83a2c;
 	--accent-bg: rgba(184, 58, 44, 0.06);
-	--common: #6b6b68;
+	--common: #7a8c6e;
 }
 
 :root[data-theme="dark"] {
@@ -27,5 +27,5 @@
 	--border-strong: rgba(245, 245, 243, 0.2);
 	--accent: #d04a3a;
 	--accent-bg: rgba(208, 74, 58, 0.07);
-	--common: #8a8a86;
+	--common: #8fa680;
 }

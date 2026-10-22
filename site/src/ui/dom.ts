@@ -62,3 +62,12 @@ export function animatedDetails(attrs: Record<string, string>, summary: HTMLElem
 	});
 	return details;
 }
+
+/* Placeholder bars while a lookup is in flight, so panes don't flash empty text. */
+export function skeletonLines(widths: string[], attrs: Record<string, string> = {}): HTMLElement {
+	return el(
+		"div",
+		{ ...attrs, class: `animate-pulse space-y-3 ${attrs.class ?? ""}`, "aria-busy": "true" },
+		widths.map((w) => el("div", { class: "h-3 rounded bg-surface-sunken", style: `width: ${w}` })),
+	);
+}

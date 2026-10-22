@@ -2,7 +2,7 @@ import type { Actions } from "../state/actions.ts";
 import { navigate } from "../state/router.ts";
 import type { AppState } from "../state/state.ts";
 import type { KanjiEntry, WordSummary } from "../types.ts";
-import { button, el } from "./dom.ts";
+import { button, el, skeletonLines } from "./dom.ts";
 import { icon } from "./icons.ts";
 
 const COLLAPSED_KANJI = 3;
@@ -14,7 +14,7 @@ function firstReadings(readings: string, n = 2): string {
 function kanjiRow(k: KanjiEntry, query: string, selected: boolean): HTMLElement {
 	const readings = [firstReadings(k.readingsKun), firstReadings(k.readingsOn)].filter(Boolean).join(" · ");
 	return button(
-		{ class: `w-full text-left px-4 py-2 border-b border-border-subtle hover:bg-surface-sunken transition-colors ${selected ? "bg-accent-bg" : ""}` },
+		{ class: `w-full text-left px-4 py-2 border-b border-border-subtle hover:bg-surface-sunken transition-colors ${selected ? "bg-surface-sunken" : ""}` },
 		[
 			el("div", { class: "flex items-baseline gap-2" }, [
 				el("span", { class: "text-primary text-lg font-medium" }, [k.character]),
@@ -28,7 +28,7 @@ function kanjiRow(k: KanjiEntry, query: string, selected: boolean): HTMLElement 
 
 function wordRow(w: WordSummary, query: string, selected: boolean): HTMLElement {
 	return button(
-		{ class: `w-full text-left px-4 py-2 border-b border-border-subtle hover:bg-surface-sunken transition-colors ${selected ? "bg-accent-bg" : ""}` },
+		{ class: `w-full text-left px-4 py-2 border-b border-border-subtle hover:bg-surface-sunken transition-colors ${selected ? "bg-surface-sunken" : ""}` },
 		[
 			el("div", { class: "flex items-baseline gap-2 min-w-0" }, [
 				el("span", { class: "text-primary text-lg font-medium truncate" }, [w.term]),
@@ -43,7 +43,13 @@ function wordRow(w: WordSummary, query: string, selected: boolean): HTMLElement 
 
 export function renderResultsList(state: AppState, actions: Actions | null): HTMLElement {
 	const empty = (text: string) => el("div", { class: "flex-1 flex items-center justify-center text-muted text-sm p-6" }, [text]);
-	if (state.searching) return empty("Searching…");
+	if (state.searching) {
+		return el("div", { class: "flex-1 min-h-0 overflow-hidden" }, Array.from({ length: 8 }, (_, i) =>
+			el("div", { class: "px-4 py-3 border-b border-border-subtle" }, [
+				skeletonLines([`${28 + ((i * 17) % 30)}%`, `${55 + ((i * 23) % 35)}%`]),
+			]),
+		));
+	}
 	if (!state.results) return empty("Type a word above to search.");
 
 	const { words, kanji } = state.results;
