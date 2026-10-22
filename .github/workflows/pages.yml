@@ -1,0 +1,88 @@
+name: Build and deploy the dictionary site
+
+# Manual only: a deploy is a deliberate act, and the live site stays up until the next one.
+on:
+  workflow_dispatch:
+    inputs:
+      base:
+        description: "URL path the site is served from"
+        type: choice
+        default: "/vocabulizer-dictionary-cli/"
+        options:
+          - "/vocabulizer-dictionary-cli/"
+          - "/"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time; a queued run waits rather than interrupting a publish.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Locate the UniDic dictionary directory
+        id: unidic
+        run: echo "dir=$(python -c 'import unidic; print(unidic.DICDIR)')" >> "$GITHUB_OUTPUT"
+
+      - name: Cache UniDic
+        id: unidic-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.unidic.outputs.dir }}
+          key: unidic-${{ hashFiles('requirements.txt') }}
+
+      - name: Download UniDic
+        if: steps.unidic-cache.outputs.cache-hit != 'true'
+        run: python -m unidic download
+
+      - name: Build the dictionary
+        run: python src/main.py --build Japanese_English
+
+      - name: Prepare the site database
+        run: python scripts/prepare_site_db.py
+
+      - name: Build the site
+        working-directory: site
+        env:
+          # Set the PAGES_BASE repository variable to "/" once a custom domain is attached.
+          VITE_BASE: ${{ inputs.base || vars.PAGES_BASE || '/vocabulizer-dictionary-cli/' }}
+        run: |
+          npm ci
+          npm test
+          npm run build
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

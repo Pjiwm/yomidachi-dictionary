@@ -32,7 +32,8 @@ python scripts/prepare_site_db.py             # search tables + chunks into site
 cd site && npm install && npm run dev
 ```
 
-`npm run build` writes `site/dist/`. Deploys run from `.github/workflows/pages.yml`.
+`npm run build` writes `site/dist/`. Deploys are manual: Actions → "Build and
+deploy the dictionary site" → Run workflow.
 
 ## Contributing
 
