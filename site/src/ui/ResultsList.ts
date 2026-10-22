@@ -5,8 +5,10 @@ import type { KanjiEntry, WordSummary } from "../types.ts";
 import { bone, button, el, ja, link, skeleton } from "./dom.ts";
 import { icon } from "./icons.ts";
 
+import { KANJI_STRIP } from "../db/repository.ts";
+
 /* Two rows of tiles at the default width before "Show all" is needed. */
-const COLLAPSED_KANJI = 12;
+const COLLAPSED_KANJI = KANJI_STRIP;
 
 function firstMeaning(meanings: string): string {
 	return meanings.split(",")[0].trim();
@@ -87,10 +89,10 @@ export function renderResultsList(state: AppState, actions: Actions | null): HTM
 	if (kanji.length) {
 		const shown = state.kanjiExpanded ? kanji : kanji.slice(0, COLLAPSED_KANJI);
 		const toggle =
-			kanji.length > COLLAPSED_KANJI
+			kanji.length >= COLLAPSED_KANJI
 				? button(
 						{ class: "flex items-center gap-1 min-h-11 px-2 -mr-2 text-xs text-muted hover:text-secondary", "aria-expanded": String(state.kanjiExpanded) },
-						[state.kanjiExpanded ? "Show fewer" : "Show all", icon("chevronDown", 12)],
+						[state.kanjiExpanded ? "Show fewer" : kanji.length > COLLAPSED_KANJI ? `All ${kanji.length}` : "Show all", icon("chevronDown", 12)],
 						() => actions?.toggleKanjiExpanded(),
 					)
 				: null;

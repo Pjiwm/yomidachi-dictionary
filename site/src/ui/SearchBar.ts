@@ -12,14 +12,14 @@ export function renderSearchBar(state: AppState, actions: Actions | null, size: 
 		inputmode: "search",
 		enterkeyhint: "search",
 		value: state.query,
-		placeholder: "Japanese or English, e.g. 食べる, たべる, eat",
+		placeholder: "Japanese or English",
 		autocomplete: "off",
 		autocapitalize: "off",
 		spellcheck: "false",
 		"aria-label": "Search the dictionary",
 		class: size === "large" ? "search-input text-lg pl-4 pr-36 py-3" : "search-input text-base pl-4 pr-32 py-2",
 	});
-	if (size === "large" && matchMedia("(hover: hover)").matches) input.autofocus = true;
+	if (size === "large" && !matchMedia("(pointer: coarse)").matches) input.autofocus = true;
 
 	const radicals = button(
 		{

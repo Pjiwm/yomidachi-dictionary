@@ -1,4 +1,4 @@
-import type { DictRepository } from "../db/repository.ts";
+import { type DictRepository, KANJI_LIMIT, KANJI_STRIP } from "../db/repository.ts";
 import { hasWildcard, parseQuery } from "../search/query.ts";
 import { resolveFilter, type ResolvedFilter } from "../search/filters.ts";
 import type { Route } from "./router.ts";
@@ -76,17 +76,29 @@ export class Actions {
 		const kanjiOnly = resolved.some((f) => f.kind === "kanjiOnly");
 		const filters = resolved.filter((f) => f.kind !== "kanjiOnly");
 
+		const kanjiLimit = kanjiOnly || this.store.current.kanjiExpanded ? KANJI_LIMIT : KANJI_STRIP;
 		let results: SearchResults;
 		if (filters.length > 0 || hasWildcard(text)) {
-			results = await this.repository.advancedSearch(text, filters, limit);
+			results = await this.repository.advancedSearch(text, filters, limit, kanjiLimit);
 		} else {
 			const [words, kanji] = await Promise.all([
 				kanjiOnly ? Promise.resolve([]) : this.repository.search(text, limit),
-				this.repository.kanjiForText(text),
+				this.repository.kanjiForText(text, kanjiLimit),
 			]);
 			results = { words, kanji };
 		}
 		return kanjiOnly ? { words: [], kanji: results.kanji } : results;
+	}
+
+	/* The collapsed strip only fetched its own rows; expanding fetches the rest. */
+	private async loadAllKanji(): Promise<void> {
+		const { query, results } = this.store.current;
+		if (!results || results.kanji.length < KANJI_STRIP) return;
+		const { text, chips } = parseQuery(query);
+		const filters = chips.map(resolveFilter).filter((f): f is ResolvedFilter => f !== null && f.kind !== "kanjiOnly");
+		const kanji = await this.repository.advancedKanji(text, filters, KANJI_LIMIT).catch(() => results.kanji);
+		const current = this.store.current;
+		if (current.query === query && current.results) this.store.update({ results: { ...current.results, kanji } });
 	}
 
 	private async loadWord(sequence: number): Promise<void> {
@@ -157,7 +169,9 @@ export class Actions {
 	}
 
 	toggleKanjiExpanded(): void {
-		this.store.update({ kanjiExpanded: !this.store.current.kanjiExpanded });
+		const expanded = !this.store.current.kanjiExpanded;
+		this.store.update({ kanjiExpanded: expanded });
+		if (expanded) void this.loadAllKanji();
 	}
 
 	async followReference(term: string): Promise<Route | null> {

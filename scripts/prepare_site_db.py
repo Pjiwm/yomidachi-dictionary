@@ -12,7 +12,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 
 # Every page is one HTTP round trip whatever its size, and latency, not
 # bandwidth, is what a phone pays for; 4 KiB pages quarter the request count.
-PAGE_SIZE = 4096
+PAGE_SIZE = 16384
 DEFAULT_CHUNK_SIZE = 10 * 1024 * 1024
 SUFFIX_LENGTH = 3
 CHUNK_PREFIX = "db.sqlite3."
@@ -185,18 +185,24 @@ def build_search_tables(conn: sqlite3.Connection) -> None:
             PRIMARY KEY (key, rank, sequence)
         ) WITHOUT ROWID;
 
+        /* Display columns ride along so an English search reads one key range
+           and touches no other table; the duplication is the price of that. */
         CREATE TABLE en_index (
             gloss TEXT NOT NULL COLLATE NOCASE,
             sense_rank INTEGER NOT NULL,
             position INTEGER NOT NULL,
             rank INTEGER NOT NULL,
             sequence INTEGER NOT NULL,
+            term TEXT NOT NULL,
+            reading TEXT NOT NULL,
+            summary TEXT NOT NULL,
+            common INTEGER NOT NULL,
             PRIMARY KEY (gloss, sense_rank, position, rank, sequence)
         ) WITHOUT ROWID;
         INSERT OR IGNORE INTO en_index
         SELECT g.gloss,
                s.id <> (SELECT min(id) FROM senses m WHERE m.sequence = s.sequence),
-               g.position, ws.rank, s.sequence
+               g.position, ws.rank, s.sequence, ws.term, ws.reading, ws.gloss, ws.common
         FROM glosses g
         JOIN senses s ON s.id = g.sense_id
         JOIN word_summary ws ON ws.sequence = s.sequence

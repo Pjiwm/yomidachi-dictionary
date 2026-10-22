@@ -11,6 +11,11 @@ import { icon } from "./icons.ts";
    keystroke should not re-render the whole app. */
 let draft = "";
 
+/* The overlay DOM is reused across renders: rebuilding a blurred full-screen
+   backdrop on every tap is what made the sheet flash on phones. */
+let overlay: HTMLElement | null = null;
+let panelsHost: HTMLElement | null = null;
+
 function groupByStrokes(radicals: Radical[]): [number, Radical[]][] {
 	const groups = new Map<number, Radical[]>();
 	for (const r of radicals) groups.set(r.strokes, [...(groups.get(r.strokes) ?? []), r]);
@@ -95,7 +100,10 @@ export function openDraft(initial: string): void {
 
 export function renderRadicalPicker(state: AppState, actions: Actions | null): HTMLElement | null {
 	const picker = state.radicalPicker;
-	if (!picker || !actions) return null;
+	if (!picker || !actions) {
+		releasePickerOverlay();
+		return null;
+	}
 	const isTouch = !matchMedia("(min-width: 768px)").matches;
 
 	const submit = () => {
@@ -154,7 +162,13 @@ export function renderRadicalPicker(state: AppState, actions: Actions | null): H
 		flip,
 		kanjiPanel(picker, actions, isTouch, insert),
 	]);
-	arrowNavigation(panels);
+
+	if (overlay && panelsHost) {
+		panelsHost.replaceChildren(panels);
+		return overlay;
+	}
+	panelsHost = el("div", {}, [panels]);
+	arrowNavigation(panelsHost);
 
 	const card = el("div", {
 		class: `bg-surface-elevated shadow-xl p-4 md:p-5 w-full md:max-w-2xl md:mx-4 md:rounded-xl rounded-t-xl ${picker.justOpened ? "animate-pop-in" : ""}`,
@@ -167,7 +181,7 @@ export function renderRadicalPicker(state: AppState, actions: Actions | null): H
 			button({ class: "icon-button", "aria-label": "Close" }, [icon("x", 20)], close),
 		]),
 		queryField,
-		panels,
+		panelsHost,
 	]);
 	card.addEventListener("click", (e) => e.stopPropagation());
 	card.addEventListener("keydown", (e) => {
@@ -175,7 +189,12 @@ export function renderRadicalPicker(state: AppState, actions: Actions | null): H
 	});
 
 	// Desktop: centred modal over a dimmed page. Phones: bottom sheet.
-	const overlay = el("div", { class: "fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/35 backdrop-blur-[2px]" }, [card]);
+	overlay = el("div", { class: "fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/35 backdrop-blur-[2px]" }, [card]);
 	overlay.addEventListener("click", close);
 	return overlay;
+}
+
+export function releasePickerOverlay(): void {
+	overlay = null;
+	panelsHost = null;
 }

@@ -25,6 +25,8 @@
 		color-scheme: dark;
 	}
 	body {
+		overflow-x: hidden;
+		overflow-wrap: anywhere;
 		font-family: var(--font-sans);
 		background-color: var(--bg-surface);
 		color: var(--text-primary);

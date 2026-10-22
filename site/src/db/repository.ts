@@ -13,8 +13,10 @@ import type {
 
 /* Beyond any code point, so `col >= p AND col < p + END` is a prefix range. */
 const PREFIX_END = "\u{10FFFF}";
-const KANJI_LIMIT = 60;
-const KANJI_PANEL_LIMIT = 100;
+/* Each kanji row is a random page over HTTP, so the panel fetches only what the
+   collapsed strip shows; "Show all" asks again with the full limit. */
+export const KANJI_STRIP = 12;
+export const KANJI_LIMIT = 100;
 const RADICAL_MATCH_LIMIT = 80;
 
 const ENTRY_SELECT = `
@@ -203,21 +205,18 @@ export class DictRepository {
 		if (!q) return [];
 		const rows = await this.query<SummaryRow>(
 			`WITH hits AS MATERIALIZED (
-			   SELECT sequence, sense_rank, 0 AS match_type, position, rank
+			   SELECT sequence, sense_rank, 0 AS match_type, position, rank, term, reading, summary, common
 			     FROM en_index WHERE gloss = ?1 COLLATE NOCASE
-			   UNION ALL SELECT sequence, sense_rank, 0, position, rank
+			   UNION ALL SELECT sequence, sense_rank, 0, position, rank, term, reading, summary, common
 			     FROM en_index WHERE gloss = ?2 COLLATE NOCASE
-			   UNION ALL SELECT sequence, sense_rank, gloss NOT LIKE ?5, position, rank
+			   UNION ALL SELECT sequence, sense_rank, gloss NOT LIKE ?5, position, rank, term, reading, summary, common
 			     FROM en_index WHERE gloss LIKE ?3
-			   UNION ALL SELECT sequence, sense_rank, gloss NOT LIKE ?6, position, rank
+			   UNION ALL SELECT sequence, sense_rank, gloss NOT LIKE ?6, position, rank, term, reading, summary, common
 			     FROM en_index WHERE gloss LIKE ?4
-			 ),
-			 top AS (
-			   SELECT sequence, min(sense_rank) AS a, min(match_type) AS b,
-			          min(position) AS c, min(rank) AS rank
-			   FROM hits GROUP BY sequence ORDER BY a, b, c, rank LIMIT ?7
 			 )
-			 ${SUMMARY_SELECT} ORDER BY top.a, top.b, top.c, top.rank`,
+			 SELECT sequence, term, reading, summary AS gloss, common,
+			        min(sense_rank) AS a, min(match_type) AS b, min(position) AS c, min(rank) AS rank
+			 FROM hits GROUP BY sequence ORDER BY a, b, c, rank LIMIT ?7`,
 			q,
 			`to ${q}`,
 			`${q} %`,
@@ -233,13 +232,17 @@ export class DictRepository {
 	   one per filter group, so each candidate costs one point read per
 	   group. Candidates come from the text hit set, or without text from the
 	   narrowest positive filter's tag range, or last from word_summary by rank. */
-	async advancedSearch(text: string, filters: ResolvedFilter[], limit: number): Promise<SearchResults> {
-		const kanjiFilters = filters.filter((f) => f.kind === "kanji");
+	async advancedSearch(text: string, filters: ResolvedFilter[], limit: number, kanjiLimit: number): Promise<SearchResults> {
 		const [words, kanji] = await Promise.all([
 			this.filteredWords(text, filters, limit),
-			kanjiFilters.length ? this.filteredKanji(text, kanjiFilters) : this.kanjiForText(text),
+			this.advancedKanji(text, filters, kanjiLimit),
 		]);
 		return { words, kanji };
+	}
+
+	async advancedKanji(text: string, filters: ResolvedFilter[], limit: number): Promise<KanjiEntry[]> {
+		const kanjiFilters = filters.filter((f) => f.kind === "kanji");
+		return kanjiFilters.length ? this.filteredKanji(text, kanjiFilters, limit) : this.kanjiForText(text, limit);
 	}
 
 	private async filteredWords(text: string, filters: ResolvedFilter[], limit: number): Promise<WordSummary[]> {
@@ -341,7 +344,7 @@ export class DictRepository {
 	}
 
 	/* Kanji matching the grade, strokes and jlpt filters, narrowed to the text. */
-	private async filteredKanji(text: string, filters: ResolvedFilter[]): Promise<KanjiEntry[]> {
+	private async filteredKanji(text: string, filters: ResolvedFilter[], limit: number): Promise<KanjiEntry[]> {
 		const column: Record<string, string> = { grade: "grade", strokes: "stroke_count", jlpt: "jlpt_level" };
 		const clauses: string[] = [];
 		const params: unknown[] = [];
@@ -365,15 +368,15 @@ export class DictRepository {
 		const rows = await this.query<KanjiRow>(
 			`${KANJI_SELECT} WHERE ${clauses.join(" AND ")} ORDER BY stroke_count, character LIMIT ?`,
 			...params,
-			KANJI_PANEL_LIMIT,
+			limit,
 		);
 		return rows.map(toKanji);
 	}
 
 	/* The kanji panel for a plain search: the characters typed, or kanji read as the kana typed. */
-	async kanjiForText(text: string): Promise<KanjiEntry[]> {
+	async kanjiForText(text: string, limit: number): Promise<KanjiEntry[]> {
 		if (hasKanji(text)) return this.kanjiForWord(text);
-		if (hasKana(text)) return this.kanjiByReading(text, KANJI_LIMIT);
+		if (hasKana(text)) return this.kanjiByReading(text, limit);
 		return [];
 	}
 
