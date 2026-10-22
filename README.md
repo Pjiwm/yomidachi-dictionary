@@ -1,8 +1,8 @@
-# Vocabulizer Dictionary CLI
+# Vocabulizer Dictionary & CLI
 
-**Search the dictionary:** https://pjiwm.github.io/yomidachi-dictionary/#/
+[Search the dictionary](https://pjiwm.github.io/yomidachi-dictionary/#/)
 
-CLI tool for building Japanese dictionary SQLite databases from JMdict/KANJIDIC source data.
+CLI tool & website for building Japanese dictionary SQLite databases from JMdict/KANJIDIC source data.
 
 ## Setup
 
