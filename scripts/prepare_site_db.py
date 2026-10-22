@@ -1,6 +1,7 @@
 """Turn a built dictionary into the chunked layout sql.js-httpvfs reads over HTTP."""
 
 import argparse
+import hashlib
 import json
 import shutil
 import sqlite3
@@ -262,14 +263,31 @@ def prepare_database(source: Path, work_copy: Path) -> dict:
     return meta
 
 
+def content_hash(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as f:
+        while block := f.read(1 << 20):
+            digest.update(block)
+    return digest.hexdigest()[:12]
+
+
 def write_chunks(prepared: Path, out_dir: Path, chunk_size: int) -> dict:
-    """Split the database into chunk files and return the matching httpvfs config."""
-    for stale in out_dir.glob(CHUNK_PREFIX + "*"):
-        stale.unlink()
+    """Split the database into chunk files under a per-build folder; return the httpvfs config.
+
+    The folder is named by content hash so a tab that is open across a deploy
+    gets a clean 404 instead of reading pages from a different database.
+    """
+    version_dir = out_dir / content_hash(prepared)
+    for stale in out_dir.iterdir():
+        if stale.is_dir() and stale != version_dir:
+            shutil.rmtree(stale)
+        elif stale.name.startswith(CHUNK_PREFIX):
+            stale.unlink()
+    version_dir.mkdir(exist_ok=True)
     with prepared.open("rb") as src:
         index = 0
         while block := src.read(chunk_size):
-            (out_dir / f"{CHUNK_PREFIX}{index:0{SUFFIX_LENGTH}d}").write_bytes(block)
+            (version_dir / f"{CHUNK_PREFIX}{index:0{SUFFIX_LENGTH}d}").write_bytes(block)
             index += 1
     return {
         "serverMode": "chunked",
@@ -277,7 +295,7 @@ def write_chunks(prepared: Path, out_dir: Path, chunk_size: int) -> dict:
         "requestChunkSize": PAGE_SIZE,
         "databaseLengthBytes": prepared.stat().st_size,
         "serverChunkSize": chunk_size,
-        "urlPrefix": CHUNK_PREFIX,
+        "urlPrefix": f"{version_dir.name}/{CHUNK_PREFIX}",
         "suffixLength": SUFFIX_LENGTH,
     }
 
@@ -320,8 +338,8 @@ def main() -> int:
     (args.out / "meta.json").write_text(json.dumps(meta, indent=2) + "\n")
     work_copy.unlink()
 
-    chunk_count = len(list(args.out.glob(CHUNK_PREFIX + "*")))
-    print(f"{config['databaseLengthBytes']} bytes in {chunk_count} chunks at {args.out}")
+    chunk_count = len(list(args.out.glob(f"*/{CHUNK_PREFIX}*")))
+    print(f"{config['databaseLengthBytes']} bytes in {chunk_count} chunks at {args.out / config['urlPrefix']}*")
     return 0
 
 

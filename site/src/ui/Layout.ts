@@ -63,8 +63,8 @@ export function renderLayout(state: AppState, actions: Actions | null): HTMLElem
 		const searchBar = renderSearchBar(state, actions, "large");
 		return el("div", { class: "min-h-dvh flex flex-col" }, [
 			skipLink(),
-			el("header", { class: "px-4 py-2 flex justify-end" }, [themeButton()]),
 			state.error ? errorBanner(state.error) : null,
+			el("header", { class: "px-4 py-2 flex justify-end" }, [themeButton()]),
 			el("main", { id: "main", class: "flex-1 flex flex-col items-center px-4 pt-[5vh] pb-12 gap-6" }, [
 				el("h1", { class: "contents" }, [wordmark("large")]),
 				el("div", { class: "relative w-full max-w-4xl" }, [searchBar, renderRadicalPicker(state, actions)]),
@@ -83,13 +83,13 @@ export function renderLayout(state: AppState, actions: Actions | null): HTMLElem
 	const searchBar = renderSearchBar(state, actions, "compact");
 	return el("div", { class: "h-dvh flex flex-col" }, [
 		skipLink(),
+		state.error ? errorBanner(state.error) : null,
 		// Phones: wordmark and theme on one row, the search bar full width below. Wider: one row.
 		el("header", { class: "border-b border-border-subtle px-3 sm:px-4 py-2 flex flex-wrap items-center gap-x-4 gap-y-2" }, [
 			wordmark("small"),
 			el("div", { class: "ml-auto sm:order-3" }, [themeButton()]),
 			el("div", { class: "relative basis-full sm:basis-auto sm:flex-1 sm:max-w-3xl sm:order-2" }, [searchBar, renderRadicalPicker(state, actions)]),
 		]),
-		state.error ? errorBanner(state.error) : null,
 		resultsAnnouncer(state),
 		el("main", { id: "main", class: "flex-1 min-h-0 grid md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]" }, [
 			el("div", { class: `min-h-0 border-r border-border-subtle ${showingDetail ? "hidden md:flex" : "flex"} flex-col ${listMotion}` }, [

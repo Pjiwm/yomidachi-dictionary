@@ -63,7 +63,12 @@ export class Actions {
 		} catch (err) {
 			if (token !== this.searchToken) return;
 			console.error(err);
-			this.store.update({ results: { words: [], kanji: [] }, searching: false });
+			// The usual cause is a deploy replacing the database files under an open tab.
+			this.store.update({
+				results: { words: [], kanji: [] },
+				searching: false,
+				error: "The dictionary was updated while this page was open. Reload to continue.",
+			});
 		} finally {
 			clearTimeout(skeleton);
 		}
