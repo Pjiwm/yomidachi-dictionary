@@ -37,10 +37,6 @@ cd site && npm install && npm run dev
 `npm run build` writes `site/dist/`. Deploys are manual: Actions → "Build and
 deploy the dictionary site" → Run workflow.
 
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md).
-
 ## Data Attribution
 
 The dictionary databases built by this tool use data from the
